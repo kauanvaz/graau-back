@@ -1,12 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, Optional, Union, Any
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches, Mm
+from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import parse_xml, register_element_cls
-from docx.oxml.ns import nsdecls
-from docx.oxml.shape import CT_Picture
-from docx.shared import Cm
 from pathlib import Path
 import logging
 
@@ -193,10 +189,14 @@ if __name__ == "__main__":
     }
 
     generator = ReportGenerator()
+    
+    result_report_path = Path('src/relatorios')
+    cover_images_path = Path('src/cover_images')
+    
     success = generator.generate_report(
         template=template,
-        output_path="relatorio.docx",
-        cover_image_path="cover_images/cover_page_1.jpg"
+        output_path=result_report_path / "relatorio.docx",
+        cover_image_path= cover_images_path / "cover_page_1.jpg"
     )
 
     if not success:
