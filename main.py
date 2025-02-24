@@ -1,5 +1,5 @@
 import json
-from src.sharepoint import PaneisMetas
+from src.sharepoint import Sharepoint
 from src.report_generator import ReportGenerator
 from pathlib import Path
 
@@ -14,19 +14,19 @@ def generate_json(data):
     print(f"Arquivo {filename} gerado.")
 
 if __name__ == "__main__":
-    # sharepoint_data = PaneisMetas().get_monitoramento(item_id=3868)
+    sharepoint_data = Sharepoint()._get_data(item_id=3868)
 
-    sharepoint_data = [
-        {
-            "unidades_fiscalizadas": "P. M. CIDADE",
-            "n_processo_eTCE": "TC/XXXXXX/20XX",
-            "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
-            "exercicios": "20XX, 20YY",
-            "VRF": "R$ 100.000,00"
-        }
-    ]
+    # sharepoint_data = [
+    #     {
+    #         "unidades_fiscalizadas": "P. M. CIDADE",
+    #         "n_processo_eTCE": "TC/XXXXXX/20XX",
+    #         "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
+    #         "exercicios": "20XX, 20YY",
+    #         "VRF": "R$ 100.000,00"
+    #     }
+    # ]
     
-    # generate_json(sharepoint_data)
+    generate_json(sharepoint_data)
     
     # Criar o gerador de relatórios
     generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")

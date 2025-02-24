@@ -7,7 +7,7 @@ from babel.numbers import format_currency
 load_dotenv()
 
 # Configurações do SharePoint
-class PaneisMetas():
+class Sharepoint():
     def __init__(self) -> None:
         site_url_base = "https://tcepi365.sharepoint.com"
         site_url = "https://tcepi365.sharepoint.com/sites/SecretariadeControleExterno"
@@ -15,7 +15,18 @@ class PaneisMetas():
         password = os.getenv("SENHA")
         self.site = Site(site_url, authcookie=Office365(site_url_base, username=username, password=password).GetCookies())
 
-    def transform_data(self, data):
+    def get_all_lists(self):
+        lists = self.site.GetListCollection()
+        list_names = [list_info['Title'] for list_info in lists]
+        
+        for l in lists:
+            if l['Title'] == 'Processos E-TCE':
+                print("AQUIIIIIII ->\n", l)
+                break
+    
+        return list_names
+
+    def _transform_data(self, data):
         def safe_split(value, index=1):
             """Realiza split de forma segura, retornando valor vazio se houver erro."""
             if not value or not isinstance(value, str):
@@ -124,18 +135,36 @@ class PaneisMetas():
             } for i in data
         ]
 
-    def get_monitoramento(self, item_id=None):
-        sp_list = self.site.List('Cadastro de Ação de Controle')
+    def _get_data(self, list_name=None, query=None):
+        if not list_name: return None
         
-        if item_id:
+        sp_list = self.site.List(list_name)
+        
+        if query:
             fields = None
-            query = {'Where': [('Eq', 'ID', str(item_id))]}
             data = sp_list.GetListItems(fields=fields, query=query)
         else:
             data = sp_list.GetListItems()
             
-        return self.transform_data(data)
+        return self._transform_data(data)
+    
+    def get_acao_controle_data(self, item_id=None):
+        query=None
+        if item_id:
+            query = {'Where': [('Eq', 'ID', str(item_id))]}
+        
+        return self._get_data(list_name='Cadastro de Ação de Controle', query=query)
+    
+    def get_processos_ETCE_data(self, item_processo_codigo=None):
+        query=None
+        if item_processo_codigo:
+            query = {'Where': [('Eq', 'processoCodigo', str(item_processo_codigo))]}
+        
+        return self._get_data(list_name='Processos E-TCE', query=query)
 
 if __name__ == '__main__':
-    result = PaneisMetas().get_monitoramento(item_id=3868)
+    result = Sharepoint().get_acao_controle_data(item_id=3868)
+    # result = Sharepoint().get_processos_ETCE_data()
+    
+    # result = Sharepoint().get_all_lists()
     print(result)

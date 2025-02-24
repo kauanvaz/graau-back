@@ -40,5 +40,7 @@ success = generator.generate_report(
 
 ## Estrutura do arquivo .env
 
+```
 - USUARIO="user.name@tce.pi.gov.br"
 - SENHA="suaSenha"
+```
