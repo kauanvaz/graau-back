@@ -1,7 +1,6 @@
 import json
-from src.sharepoint import Sharepoint
-from src.report_generator import ReportGenerator
-from pathlib import Path
+from sharepoint import Sharepoint
+from report_generator import ReportGenerator
 
 def generate_json(data):
     # Salvar os dados em um arquivo JSON
@@ -14,7 +13,7 @@ def generate_json(data):
     print(f"Arquivo {filename} gerado.")
 
 if __name__ == "__main__":
-    sharepoint_data = Sharepoint()._get_data(item_id=3868)
+    sharepoint_data = Sharepoint().get_acao_controle_data(item_id=3868)
 
     # sharepoint_data = [
     #     {

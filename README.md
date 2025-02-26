@@ -1,4 +1,4 @@
-# Report Generator
+# GRAAU - backend
 
 Uma biblioteca Python para geração automatizada de relatórios em formato DOCX com suporte a imagens de capa.
 
@@ -7,18 +7,21 @@ Uma biblioteca Python para geração automatizada de relatórios em formato DOCX
 - Geração de relatórios em formato DOCX
 - Suporte a imagem de capa em página inteira
 - Estrutura hierárquica de seções e subseções
-- Sistema de logging integrado
-- Tipagem estática com Type Hints
 
 ## Instalação
 
-1. Instale as dependências necessárias:
+1. Crie um ambiente virtual e o ative
 
 ```bash
-pip install python-docx
+virtualenv venv
+source venv/bin/activate
 ```
 
-2. Copie os arquivos do projeto para seu ambiente de desenvolvimento.
+2. Instale as dependências necessárias:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Uso Básico
 

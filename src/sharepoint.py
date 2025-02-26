@@ -18,11 +18,6 @@ class Sharepoint():
     def get_all_lists(self):
         lists = self.site.GetListCollection()
         list_names = [list_info['Title'] for list_info in lists]
-        
-        for l in lists:
-            if l['Title'] == 'Processos E-TCE':
-                print("AQUIIIIIII ->\n", l)
-                break
     
         return list_names
 
@@ -146,25 +141,33 @@ class Sharepoint():
         else:
             data = sp_list.GetListItems()
             
-        return self._transform_data(data)
+        return data
     
     def get_acao_controle_data(self, item_id=None):
         query=None
         if item_id:
             query = {'Where': [('Eq', 'ID', str(item_id))]}
+            
+        data = self._get_data(list_name='Cadastro de Ação de Controle', query=query)
         
-        return self._get_data(list_name='Cadastro de Ação de Controle', query=query)
+        return self._transform_data(data)
     
     def get_processos_ETCE_data(self, item_processo_codigo=None):
         query=None
         if item_processo_codigo:
             query = {'Where': [('Eq', 'processoCodigo', str(item_processo_codigo))]}
+            
+        data = self._get_data(list_name='Processos E-TCE', query=query)
         
-        return self._get_data(list_name='Processos E-TCE', query=query)
+        return data
 
 if __name__ == '__main__':
-    result = Sharepoint().get_acao_controle_data(item_id=3868)
-    # result = Sharepoint().get_processos_ETCE_data()
+    names_list = Sharepoint().get_all_lists()
     
-    # result = Sharepoint().get_all_lists()
+    print(names_list, end="\n\n")
+    print("#"*80, end="\n\n")
+    
+    # result = Sharepoint().get_acao_controle_data(item_id=3868)
+    result = Sharepoint().get_processos_ETCE_data()
+    
     print(result)
