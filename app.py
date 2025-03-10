@@ -34,6 +34,11 @@ PENDING_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pending_
 if not os.path.exists(PENDING_DIR):
     os.makedirs(PENDING_DIR)
 
+# Diretório para armazenar imagens de capa temporárias
+COVER_IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src/temp_cover_images')
+if not os.path.exists(COVER_IMAGES_DIR):
+    os.makedirs(COVER_IMAGES_DIR)
+
 # Arquivo para rastrear os relatórios
 REPORTS_TRACKER = os.path.join(REPORTS_DIR, 'reports_tracker.json')
 if not os.path.exists(REPORTS_TRACKER):
@@ -43,6 +48,8 @@ if not os.path.exists(REPORTS_TRACKER):
 # Configurações da API - TORNADAS FACILMENTE CONFIGURÁVEIS
 app.config['REPORT_EXPIRATION_MINUTES'] = 1  # Valor padrão de 30 minutos
 app.config['CLEANUP_INTERVAL_SECONDS'] = 60  # Verificar a cada 5 minutos
+app.config['ALLOWED_IMAGE_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+app.config['MAX_IMAGE_SIZE'] = 5 * 1024 * 1024  # 5MB
 
 # Pool de threads para processamento assíncrono
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
@@ -64,6 +71,11 @@ def save_reports_tracker(tracker_data):
     with open(REPORTS_TRACKER, 'w') as f:
         json.dump(tracker_data, f, indent=4)
 
+def allowed_file(filename):
+    """Verifica se o arquivo possui uma extensão permitida."""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_IMAGE_EXTENSIONS']
+
 def cleanup_old_reports():
     """Remove relatórios antigos com base na configuração REPORT_EXPIRATION_MINUTES."""
     while True:
@@ -82,6 +94,13 @@ def cleanup_old_reports():
                     if os.path.exists(report_path):
                         os.remove(report_path)
                         logger.info(f"Relatório excluído: {report['filename']}")
+                        
+                        # Remover imagem de capa associada, se houver
+                    if 'cover_image' in report and report['cover_image']:
+                        cover_path = os.path.join(COVER_IMAGES_DIR, report['cover_image'])
+                        if os.path.exists(cover_path):
+                            os.remove(cover_path)
+                            logger.info(f"Imagem de capa excluída: {report['cover_image']}")
                             
                     # Remover arquivo de status
                     status_file = os.path.join(PENDING_DIR, f"{report.get('task_id', '')}.json")
@@ -105,7 +124,7 @@ cleanup_thread = threading.Thread(target=cleanup_old_reports, daemon=True)
 cleanup_thread.start()
 
 
-def generate_report_task(data, filepath, task_id):
+def generate_report_task(data, filepath, task_id, cover_image_path):
     """Função para gerar o relatório de forma assíncrona."""
     try:
         logger.info(f"Iniciando geração assíncrona do relatório: {task_id}")
@@ -142,7 +161,7 @@ def generate_report_task(data, filepath, task_id):
         report_generator.generate_report(
             context=sharepoint_data[0],
             output_path=filepath,
-            cover_image_path='',
+            cover_image_path=cover_image_path,
             graau_params=report_params
         )
         
@@ -156,6 +175,7 @@ def generate_report_task(data, filepath, task_id):
             },
             "status": "completed",
             "task_id": task_id,
+            "cover_image": os.path.basename(cover_image_path) if cover_image_path else None
         }
         
         tracker_data = load_reports_tracker()
@@ -190,6 +210,53 @@ def generate_report_task(data, filepath, task_id):
         
         return {"error": error_message}
 
+@app.route('/api/upload-cover-image', methods=['POST'])
+def upload_cover_image():
+    """Endpoint para fazer upload de uma imagem de capa."""
+    try:
+        # Verificar se a requisição contém um arquivo
+        if 'file' not in request.files:
+            return jsonify({"error": "Nenhum arquivo enviado"}), 400
+            
+        file = request.files['file']
+        
+        # Verificar se um arquivo foi selecionado
+        if file.filename == '':
+            return jsonify({"error": "Nenhum arquivo selecionado"}), 400
+            
+        # Verificar extensão do arquivo
+        if not allowed_file(file.filename):
+            return jsonify({
+                "error": f"Formato de arquivo não permitido. Use: {', '.join(app.config['ALLOWED_IMAGE_EXTENSIONS'])}"
+            }), 400
+            
+        # Verificar tamanho do arquivo
+        if len(file.read()) > app.config['MAX_IMAGE_SIZE']:
+            file.seek(0)  # Reset do ponteiro do arquivo
+            return jsonify({"error": f"Arquivo muito grande. Tamanho máximo: {app.config['MAX_IMAGE_SIZE'] / 1024 / 1024}MB"}), 400
+            
+        file.seek(0)  # Reset do ponteiro do arquivo
+        
+        # Gerar nome único para o arquivo
+        image_id = str(uuid.uuid4())
+        extension = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"cover_{image_id}.{extension}"
+        filepath = os.path.join(COVER_IMAGES_DIR, filename)
+        
+        # Salvar o arquivo
+        file.save(filepath)
+        
+        return jsonify({
+            "success": True,
+            "message": "Imagem de capa enviada com sucesso",
+            "image_id": image_id,
+            "filename": filename
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Erro ao fazer upload da imagem: {str(e)}")
+        return jsonify({"error": f"Erro ao processar upload: {str(e)}"}), 500
+
 @app.route('/api/generate-report', methods=['POST'])
 def generate_report():
     """
@@ -197,6 +264,7 @@ def generate_report():
     Espera receber um JSON com:
     - sharepoint_id: Parâmetros para buscar dados no SharePoint
     - report_params: Parâmetros para gerar o relatório
+    - cover_image_id: ID da imagem de capa previamente enviada
     """
     try:
         data = request.json
@@ -204,10 +272,22 @@ def generate_report():
             return jsonify({"error": "Nenhum dado JSON recebido"}), 400
         
         # Validação de campos obrigatórios
-        required_fields = ['sharepoint_id', 'report_params']
+        required_fields = ['sharepoint_id', 'report_params', 'cover_image_id']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({"error": f"Campos obrigatórios ausentes: {', '.join(missing_fields)}"}), 400
+        
+        # Verificar a imagem de capa, se informada
+        cover_image_path = None
+        if 'cover_image_id' in data and data['cover_image_id']:
+            # Procurar a imagem pelo ID
+            for filename in os.listdir(COVER_IMAGES_DIR):
+                if data['cover_image_id'] in filename:
+                    cover_image_path = os.path.join(COVER_IMAGES_DIR, filename)
+                    break
+            
+        if not cover_image_path or not os.path.exists(cover_image_path):
+            return jsonify({"error": "Imagem de capa não encontrada. Faça o upload novamente."}), 404
         
         # Gerar nome de arquivo único
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -216,7 +296,7 @@ def generate_report():
         filepath = os.path.join(REPORTS_DIR, filename)
         
         # Iniciar geração de relatório em thread separada
-        future = executor.submit(generate_report_task, data, filepath, task_id)
+        future = executor.submit(generate_report_task, data, filepath, task_id, cover_image_path)
         tasks[task_id] = future
         
         # Retornar imediatamente com o ID da tarefa
