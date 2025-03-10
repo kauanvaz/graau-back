@@ -3,7 +3,7 @@ from shareplum import Office365
 import os
 from dotenv import load_dotenv
 from babel.numbers import format_currency
-from utils import load_json
+from .utils import load_json
 from pathlib import Path
 import re
 

@@ -69,7 +69,7 @@ class ReportGenerator:
             self.logger.error(f"Error adding cover image: {str(e)}")
             return False
 
-    def generate_report(self, context: dict, output_path: str, cover_image_path: Optional[Union[str, Path]] = None) -> bool:
+    def generate_report(self, context: dict, output_path: str, cover_image_path: Optional[Union[str, Path]] = None, graau_params: dict = {}) -> bool:
         """
         Generates the report using the template and provided context.
         
@@ -77,7 +77,7 @@ class ReportGenerator:
             context: Dictionary with the template context
             output_path: Path to save the output file
             cover_image_path: Optional path to the cover image
-            
+            graau_params: Dictionary with more information from the user to the report
         Returns:
             bool: True if the report was generated successfully
         """
