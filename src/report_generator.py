@@ -123,6 +123,6 @@ if __name__ == "__main__":
     # Gerar relatório
     success = generator.generate_report(
         context=sharepoint_data[0],
-        output_path="src/relatorios/report_example.docx",
+        output_path="src/reports/report_example.docx",
         cover_image_path="src/cover_images/cover_page_1.jpg"
     )

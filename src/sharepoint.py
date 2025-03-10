@@ -3,10 +3,10 @@ from shareplum import Office365
 import os
 from dotenv import load_dotenv
 from babel.numbers import format_currency
+from utils import load_json
+from pathlib import Path
+import re
 
-load_dotenv()
-
-# Configurações do SharePoint
 class Sharepoint():
     def __init__(self) -> None:
         site_url_base = "https://tcepi365.sharepoint.com"
@@ -14,6 +14,9 @@ class Sharepoint():
         username = os.getenv("USUARIO")
         password = os.getenv("SENHA")
         self.site = Site(site_url, authcookie=Office365(site_url_base, username=username, password=password).GetCookies())
+        self.diretorias_mapping = load_json(Path('src/mappings/diretorias.json'))
+        
+        load_dotenv()
 
     def get_all_lists(self):
         lists = self.site.GetListCollection()
@@ -48,11 +51,11 @@ class Sharepoint():
                 return default
 
         def safe_list_split(value):
-            """Processa lista de valores com split, retornando string vazia se houver erro."""
+            """Processa lista de valores com split."""
             if not value:
                 return ''
             if isinstance(value, list):
-                return ', '.join([safe_split(x) for x in value])
+                return '\n'.join([safe_split(x) for x in value])
             return value
 
         def safe_multiple_split(value):
@@ -78,6 +81,47 @@ class Sharepoint():
                 return ', '.join(filter(None, values))
             except (IndexError, TypeError):
                 return ''
+            
+        def format_name(nome):
+            """
+            Converte um nome para title case (primeira letra de cada palavra maiúscula),
+            mas mantém preposições e artigos em minúsculas.
+            
+            Args:
+                nome (str): O nome a ser formatado
+                
+            Returns:
+                str: O nome formatado
+            """
+
+            preposicoes = ['a', 'o', 'as', 'os', 'de', 'da', 'do', 'das', 'dos', 'em', 'na', 'no', 
+                        'nas', 'nos', 'por', 'para', 'com', 'e']
+            
+
+            palavras = nome.lower().split()
+            resultado = []
+            
+            for i, palavra in enumerate(palavras):
+                # A primeira palavra e palavras que não são preposições recebem title case
+                if i == 0 or palavra not in preposicoes:
+                    resultado.append(palavra.capitalize())
+                else:
+                    # Preposições ficam em minúsculas
+                    resultado.append(palavra)
+            
+            return ' '.join(resultado)
+        
+        def mapear_divisao(nome):
+            if nome == "DAJUR":
+                return "Divisão de Apoio ao Jurisdicionado"
+            
+            # Procura um ou mais dígitos no final da string
+            match = re.search(r'(\d+)$', nome)
+            if match:
+                numero = match.group(1)
+                return f"{numero}ª Divisão Técnica de Fiscalização"
+            
+            return nome  
 
         return [
             {
@@ -85,10 +129,16 @@ class Sharepoint():
                 'unidades_fiscalizadas': safe_split(i.get('Unidades Fiscalizadas', '')),
                 'criado_por': safe_split(i.get('Criado por', '')[0]) if isinstance(i.get('Criado por', ''), list) else '',
                 'divisao_origem_ajustada': i.get('Divisão de Origem Ajustada', ''),
+                'divisao_origem_ajustada_diretoria': (
+                    self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[0], '')
+                    ),
+                'divisao_origem_ajustada_divisao': (
+                    mapear_divisao(i.get('Divisão de Origem Ajustada', '').split('/')[1])
+                    ),
                 'finalidade_acao_de_controle': i.get('Finalidade da ação de controle', ''),
                 'tipo_acao': i.get('Tipo de ação', ''),
                 'n_processo_eTCE': safe_split(i.get('Nº Processo e-TCE', '')),
-                'n_processo_eTCE_processo_tipo': safe_split(i.get('Nº Processo e-TCE: processoTipo', '')),
+                'processo_tipo': safe_split(i.get('Nº Processo e-TCE: processoTipo', '')).title(),
                 'situacao_acao_de_controle': safe_split(i.get('Situação da Ação de Controle', '')),
                 'data_inicio_acao': safe_date_format(i.get('Data de Início da Ação:', '')),
                 'exercicios': ', '.join(filter(None, i.get('Exercícios', '').split(";#"))),
@@ -127,6 +177,10 @@ class Sharepoint():
                 'utilizou_matriz_risco_NUGEI': i.get('Utilizou matriz de Risco da NUGEI?', ''),
                 'trimestre_conclusao': safe_int(i.get('Trimestre de conclusão', '0.0')),
                 'criado_data': safe_date_format(i.get('Criado', '')),
+                'procurador': format_name(safe_split(i.get('Nº Processo: procurador', ''))),
+                'relator': format_name(safe_split(i.get('Nº Processo: relator', ''))),
+                'classe': safe_split(i.get('Nº Processo: Classe', '')),
+                'subclasse': safe_split(i.get('Nº Processo: Subclasse', ''))
             } for i in data
         ]
 
@@ -151,23 +205,9 @@ class Sharepoint():
         data = self._get_data(list_name='Cadastro de Ação de Controle', query=query)
         
         return self._transform_data(data)
-    
-    def get_processos_ETCE_data(self, item_processo_codigo=None):
-        query=None
-        if item_processo_codigo:
-            query = {'Where': [('Eq', 'processoCodigo', str(item_processo_codigo))]}
-            
-        data = self._get_data(list_name='Processos E-TCE', query=query)
-        
-        return data
 
 if __name__ == '__main__':
-    names_list = Sharepoint().get_all_lists()
     
-    print(names_list, end="\n\n")
-    print("#"*80, end="\n\n")
-    
-    # result = Sharepoint().get_acao_controle_data(item_id=3868)
-    result = Sharepoint().get_processos_ETCE_data()
+    result = Sharepoint().get_acao_controle_data(item_id=3868)
     
     print(result)

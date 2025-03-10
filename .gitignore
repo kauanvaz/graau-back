@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Other files
+test_data.json
+reports/*.docx
+backup_report_generator_versao1.py
