@@ -1,12 +1,11 @@
 # GRAAU - backend
 
-Uma biblioteca Python para geração automatizada de relatórios em formato DOCX com suporte a imagens de capa.
+API Flask para geração automatizada de relatórios em formato DOCX com suporte a imagens de capa.
 
 ## Características
 
 - Geração de relatórios em formato DOCX
 - Suporte a imagem de capa em página inteira
-- Estrutura hierárquica de seções e subseções
 
 ## Instalação
 
@@ -23,19 +22,6 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Uso Básico
-
-### Relatório com Imagem de Capa
-
-```python
-generator = ReportGenerator()
-success = generator.generate_report(
-    template=template,
-    output_path="relatorio_vendas.docx",
-    cover_image_path="logo_empresa.jpg"
-)
-```
-
 ## Limitações
 
 - Suporta apenas formato DOCX
@@ -47,3 +33,7 @@ success = generator.generate_report(
 - USUARIO="user.name@tce.pi.gov.br"
 - SENHA="suaSenha"
 ```
+
+## Documentação
+
+Para a documentação completa, incluindo todos os endpoints, parâmetros e exemplos de uso, consulte a [Documentação do projeto](./docs).

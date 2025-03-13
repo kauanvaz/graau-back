@@ -46,8 +46,8 @@ if not os.path.exists(REPORTS_TRACKER):
         json.dump([], f)
 
 # Configurações da API - TORNADAS FACILMENTE CONFIGURÁVEIS
-app.config['REPORT_EXPIRATION_MINUTES'] = 1  # Valor padrão de 30 minutos
-app.config['CLEANUP_INTERVAL_SECONDS'] = 60  # Verificar a cada 5 minutos
+app.config['REPORT_EXPIRATION_MINUTES'] = 15  # Valor padrão de 30 minutos
+app.config['CLEANUP_INTERVAL_SECONDS'] = 300  # Verificar a cada 5 minutos
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
 app.config['MAX_IMAGE_SIZE'] = 5 * 1024 * 1024  # 5MB
 
