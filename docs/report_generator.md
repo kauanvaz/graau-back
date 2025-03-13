@@ -108,7 +108,7 @@ else:
     print("Failed to generate report")
 ```
 
-## Notes
+## Observações
 
 - O módulo usa a lib `docxtpl` que permite templates estilo Jinja2-like em arquivos DOCX
 - O template deve ter variáveis placeholders que correspondam às chaves no dicionário de contexto
