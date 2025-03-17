@@ -25,15 +25,22 @@ class Sharepoint():
         return list_names
 
     def _transform_data(self, data):
-        def safe_split(value, index=1):
-            """Realiza split de forma segura, retornando valor vazio se houver erro."""
+        def safe_split(value):
+            """Realiza split simples.
+            
+            Exemplo:
+            "item1;#valor1"
+            
+            Resultado:
+            "valor1"
+            """
             if not value or not isinstance(value, str):
                 return ''
             parts = value.split(";#")
-            return parts[index] if len(parts) > index else value
+            return parts[1] if len(parts) > 1 else list(filter(None, parts))
 
         def safe_date_format(value):
-            """Formata data de forma segura, retornando string vazia se houver erro."""
+            """Formata data de datetime para string no formato "%d/%m/%Y"."""
             if not value:
                 return ''
             try:
@@ -44,43 +51,56 @@ class Sharepoint():
         def safe_int(value, default=0):
             """Converte para inteiro de forma segura, retornando valor default se houver erro."""
             try:
-                if isinstance(value, str):
+                if isinstance(value, str) and ";#" in value:
                     value = safe_split(value)
-                return int(float(value))
+                if '.' in value:
+                    value = float(value)
+                return int(value)
             except (ValueError, TypeError):
                 return default
 
         def safe_list_split(value):
             """Processa lista de valores com split."""
             if not value:
-                return ''
+                return []
             if isinstance(value, list):
-                return '\n'.join([safe_split(x) for x in value])
+                return [safe_split(x) for x in value]
             return value
 
         def safe_multiple_split(value):
-            """Processa múltiplos valores com split, removendo elementos vazios."""
+            """Processa múltiplos valores com split, removendo elementos vazios do início e do fim.
+            
+            Exemplo:
+            ";#valor1;#valor2;#", retorna "valor1, valor2"
+            
+            Resultado:
+            ["valor1", "valor2"]
+            """
             if not value or not isinstance(value, str):
-                return ''
+                return []
             parts = value.split(";#")
             if len(parts) <= 1:
                 return value
-            return ', '.join(filter(None, parts[1:-1]))
+            return list(filter(None, parts[1:-1]))
         
         def safe_alternate_split(value):
             """
-            Realiza split e retorna elementos alternados de forma segura.
-            Para dados no formato "item1;#valor1;#item2;#valor2", retorna "valor1, valor2"
+            Realiza split e retorna elementos alternados (índices ímpares).
+            Exemplo:
+            "item1;#valor1;#item2;#valor2"
+            
+            Resultado:
+            ["valor1, "valor2"]
             """
             if not value or not isinstance(value, str):
-                return ''
+                return []
             try:
                 parts = value.split(";#")
                 # Pega elementos em índices ímpares (1, 3, 5, etc)
                 values = parts[1::2]
-                return ', '.join(filter(None, values))
+                return values
             except (IndexError, TypeError):
-                return ''
+                return []
             
         def format_name(nome):
             """
@@ -125,9 +145,17 @@ class Sharepoint():
 
         return [
             {
-                'id': i.get('ID', ''),
-                'unidades_fiscalizadas': safe_split(i.get('Unidades Fiscalizadas', '')),
-                'criado_por': safe_split(i.get('Criado por', '')[0]) if isinstance(i.get('Criado por', ''), list) else '',
+                'acao__controle_ativa': i.get('Ação de controle ativa?', ''),
+                'acoes_controle_PAI_objeto': i.get('Ações de controle PAI: Objeto ', ''),
+                'anexos': safe_int(i.get('Anexos', 0)),
+                'beneficios_efetivos': i.get('Benefícios efetivos:', ''),
+                'beneficios_qualitativos': safe_multiple_split(i.get('Benefícios Qualitativos', [])),
+                'classe': safe_split(i.get('Nº Processo: Classe', '')),
+                'criado_data': safe_date_format(i.get('Criado', '')),
+                'data_conclusao_relatorio_preliminar': safe_date_format(i.get('Data de conclusão do Relatório Preliminar', '')),
+                'data_conclusão_acao_de_controle': safe_date_format(i.get('Data de conclusão da Ação de Controle', '')),
+                'data_inicio_acao': safe_date_format(i.get('Data de Início da Ação:', '')),
+                'dias_em_atividade': safe_int(i.get('Dias em atividade', 0)),
                 'divisao_origem_ajustada': i.get('Divisão de Origem Ajustada', ''),
                 'divisao_origem_ajustada_diretoria': (
                     self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[0], '')
@@ -135,52 +163,32 @@ class Sharepoint():
                 'divisao_origem_ajustada_divisao': (
                     mapear_divisao(i.get('Divisão de Origem Ajustada', '').split('/')[1])
                     ),
+                'equipe_fiscalizacao': safe_list_split(i.get('Equipe de Fiscalização', [])),
+                'exercicios': safe_alternate_split(i.get('Exercícios', [])),
                 'finalidade_acao_de_controle': i.get('Finalidade da ação de controle', ''),
-                'tipo_acao': i.get('Tipo de ação', ''),
+                'id': i.get('ID', ''),
+                'informe_metodologia_VRF': i.get('Informe a metodologia do VRF:', ''),
+                'linha_atuacao_descrição_tema': safe_alternate_split(i.get('Linha de Atuação: Descrição Tema', [])),
+                'modificado_data': safe_date_format(i.get('Modificado', '')),
+                'modificado_por': i.get('Modificado por', ''),
+                'motivo_encerramento_acao': i.get('Motivo do Encerramento da ação', ''),
+                'municipios_visitados_in_loco': safe_alternate_split(i.get('Municípios visitados in loco', [])),
                 'n_processo_eTCE': safe_split(i.get('Nº Processo e-TCE', '')),
                 'processo_tipo': safe_split(i.get('Nº Processo e-TCE: processoTipo', '')).title(),
-                'situacao_acao_de_controle': safe_split(i.get('Situação da Ação de Controle', '')),
-                'data_inicio_acao': safe_date_format(i.get('Data de Início da Ação:', '')),
-                'exercicios': ', '.join(filter(None, i.get('Exercícios', '').split(";#"))),
-                'data_conclusão_acao_de_controle': safe_date_format(i.get('Data de conclusão da Ação de Controle', '')),
-                'tempestividade_acao_de_controle': i.get('Tempestividade da Ação de Controle', ''),
-                'informe_metodologia_VRF': i.get('Informe a metodologia do VRF:', ''),
-                'VRF': format_currency(i.get('Volume de Recursos Fiscalizados (VRF):', ''), 'BRL', locale='pt_BR'),
-                'temas_PACEX': safe_split(i.get('Tema(s) do PACEX', '')),
-                'linha_atuacao_descrição_tema': safe_split(i.get('Linha de Atuação: Descrição Tema', '')),
-                'equipe_fiscalizacao': safe_list_split(i.get('Equipe de Fiscalização', '')),
-                'beneficios_qualitativos': safe_multiple_split(i.get('Benefícios Qualitativos', '')),
-                'tecnicas_aplicadas': safe_multiple_split(i.get('Técnicas Aplicadas', '')),
-                'beneficios_efetivos': i.get('Benefícios efetivos:', ''),
-                'proposta_beneficios_potenciais': i.get('Proposta de benefícios potenciais ', ''),
-                'beneficio_nao_financeiro_proposto': i.get('Benefício não Financeiro Proposto', ''),
-                'beneficio_nao_financeiro_efetivo': i.get('Benefício não financeiro efetivo', ''),
-                'quantidade_medidas_cautelares_solicitadas': i.get('Quantidade de medidas cautelares solicitadas;', ''),
-                'municipios_visitados_in_loco': safe_alternate_split(i.get('Municípios visitados in loco', '')),
-                'quantidade_visitas_realizadas': safe_int(i.get('Quantidade de visitas realizadas', 0)),
-                'canva_fiscalizacao': i.get('Canva de Fiscalização ', ''),
-                'DVR': i.get('DVR', ''),
-                'matriz_planejamento': i.get('Matriz de Planejamento ', ''),
-                'matriz_achados': i.get('Matriz de achados', ''),
-                'data_conclusao_relatorio_preliminar': safe_date_format(i.get('Data de conclusão do Relatório Preliminar', '')),
-                'motivo_encerramento_acao': i.get('Motivo do Encerramento da ação', ''),
-                'encaminhamentos': safe_multiple_split(i.get('Encaminhamentos', '')),
-                'acao__controle_ativa': i.get('Ação de controle ativa?', ''),
-                'dias_em_atividade': safe_int(i.get('Dias em atividade', '0.0')),
-                'anexos': i.get('Anexos', ''),
-                'acoes_controle_relacionadas': safe_split(i.get('Ações de controle relacionadas', '')),
-                'acoes_controle_PAI_objeto': i.get('Ações de controle PAI: Objeto ', ''),
-                'acoes_controle_PAI_VRF': safe_split(i.get('Ações de controle PAI: VRF (R$)', '')),
-                'modificado_por': i.get('Modificado por', ''),
-                'modificado_data': safe_date_format(i.get('Modificado', '')),
-                'valor_licitacoes_analisadas': i.get('Valor das Licitações Analisadas', 0.0),
-                'utilizou_matriz_risco_NUGEI': i.get('Utilizou matriz de Risco da NUGEI?', ''),
-                'trimestre_conclusao': safe_int(i.get('Trimestre de conclusão', '0.0')),
-                'criado_data': safe_date_format(i.get('Criado', '')),
                 'procurador': format_name(safe_split(i.get('Nº Processo: procurador', ''))),
+                'proposta_beneficios_potenciais': i.get('Proposta de benefícios potenciais ', ''),
+                'quantidade_medidas_cautelares_solicitadas': i.get('Quantidade de medidas cautelares solicitadas;', ''),
                 'relator': format_name(safe_split(i.get('Nº Processo: relator', ''))),
-                'classe': safe_split(i.get('Nº Processo: Classe', '')),
-                'subclasse': safe_split(i.get('Nº Processo: Subclasse', ''))
+                'situacao_acao_de_controle': safe_split(i.get('Situação da Ação de Controle', '')),
+                'subclasse': safe_split(i.get('Nº Processo: Subclasse', '')),
+                'tecnicas_aplicadas': safe_multiple_split(i.get('Técnicas Aplicadas', [])),
+                'temas_PACEX': safe_alternate_split(i.get('Tema(s) do PACEX', [])),
+                'tempestividade_acao_de_controle': i.get('Tempestividade da Ação de Controle', ''),
+                'tipo_acao': i.get('Tipo de ação', ''),
+                'trimestre_conclusao': safe_int(i.get('Trimestre de conclusão', 0)),
+                'unidades_fiscalizadas': safe_alternate_split(i.get('Unidades Fiscalizadas', [])),
+                'utilizou_matriz_risco_NUGEI': i.get('Utilizou matriz de Risco da NUGEI?', ''),
+                'VRF': format_currency(i.get('Volume de Recursos Fiscalizados (VRF):', ''), 'BRL', locale='pt_BR'),
             } for i in data
         ]
 
