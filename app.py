@@ -282,8 +282,8 @@ def get_sharepoint_data():
         return jsonify(sharepoint_data[0]), 202
         
     except Exception as e:
-        logger.error(f"Erro ao iniciar geração de relatório: {str(e)}")
-        return jsonify({"error": f"Erro ao iniciar geração de relatório: {str(e)}"}), 500
+        logger.error(f"Erro ao recuperar informações do Sharepoint: {str(e)}")
+        return jsonify({"error": f"Erro ao recuperar informações do Sharepoint: {str(e)}"}), 500
 
 @app.route('/api/generate-report', methods=['POST'])
 def generate_report():
