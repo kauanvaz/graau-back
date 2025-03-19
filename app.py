@@ -139,10 +139,6 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
                 "created_at": datetime.datetime.now().isoformat()
             }, f, indent=4)
         
-        # Obter dados do SharePoint
-        sharepoint = Sharepoint()
-        sharepoint_data = sharepoint.get_acao_controle_data(item_id=data['sharepoint_id'])
-        
         # Atualizar status
         with open(status_file, 'w') as f:
             json.dump({
@@ -159,20 +155,15 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
         report_params = data['report_params'].copy() if 'report_params' in data else {}
         
         report_generator.generate_report(
-            context=sharepoint_data[0],
+            context=report_params,
             output_path=filepath,
             cover_image_path=cover_image_path,
-            graau_params=report_params
         )
         
         # Registrar o relatório no rastreador
         report_info = {
             "filename": os.path.basename(filepath),
             "created_at": datetime.datetime.now().isoformat(),
-            "parameters": {
-                "sharepoint_id": data['sharepoint_id'],
-                "report_params": data['report_params']
-            },
             "status": "completed",
             "task_id": task_id,
             "cover_image": os.path.basename(cover_image_path) if cover_image_path else None
@@ -290,7 +281,6 @@ def generate_report():
     """
     Endpoint para gerar um relatório baseado em dados JSON (de forma assíncrona).
     Espera receber um JSON com:
-    - sharepoint_id: ID para buscar dados no SharePoint
     - report_params: Parâmetros para gerar o relatório
     - cover_image_id: ID da imagem de capa previamente enviada
     """
@@ -300,7 +290,7 @@ def generate_report():
             return jsonify({"error": "Nenhum dado JSON recebido"}), 400
         
         # Validação de campos obrigatórios
-        required_fields = ['sharepoint_id', 'report_params', 'cover_image_id']
+        required_fields = ['report_params', 'cover_image_id']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({"error": f"Campo(s) obrigatório(s) ausente(s): {', '.join(missing_fields)}"}), 400
@@ -407,4 +397,4 @@ def download_report(report_id):
     )
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8000)

@@ -111,8 +111,7 @@ class ReportGenerator:
 
     def generate_report(self, context: dict, output_path: str,
                         cover_image_path: Optional[Union[str, Path]] = None,
-                        target_image_filename: Optional[str] = "image1.png",
-                        graau_params: dict = {}) -> bool:
+                        target_image_filename: Optional[str] = "image1.png") -> bool:
         """
         Generates the report using the template and provided context.
 
