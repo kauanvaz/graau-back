@@ -248,27 +248,17 @@ def upload_cover_image():
         logger.error(f"Erro ao fazer upload da imagem: {str(e)}")
         return jsonify({"error": f"Erro ao processar upload: {str(e)}"}), 500
 
-@app.route('/api/sharepoint_data', methods=['GET'])
-def get_sharepoint_data():
+@app.route('/api/sharepoint_data/<sharepoint_id>', methods=['GET'])
+def get_sharepoint_data(sharepoint_id):
     """
     Endpoint para gerar um relatório baseado em dados JSON (de forma assíncrona).
     Espera receber um JSON com:
     - sharepoint_id: ID para buscar dados no SharePoint
     """
-    try:
-        data = request.json
-        if not data:
-            return jsonify({"error": "Nenhum dado JSON recebido"}), 400
-        
-        # Validação de campos obrigatórios
-        required_fields = ['sharepoint_id']
-        missing_fields = [field for field in required_fields if field not in data]
-        if missing_fields:
-            return jsonify({"error": f"Campo(s) obrigatório(s) ausente(s): {', '.join(missing_fields)}"}), 400
-        
+    try:        
         # Obter dados do SharePoint
         sharepoint = Sharepoint()
-        sharepoint_data = sharepoint.get_acao_controle_data(item_id=data['sharepoint_id'])
+        sharepoint_data = sharepoint.get_acao_controle_data(item_id=sharepoint_id)
         
         return jsonify(sharepoint_data[0]), 202
         

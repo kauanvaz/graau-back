@@ -49,9 +49,9 @@ Método interno que transforma os dados brutos do SharePoint em um formato estru
 - Lista de dicionários com dados transformados e formatados
 
 **Funcionalidades:**
-- Realiza o parsing seguro de valores separados por ";#"
+- Realiza o parsing de valores separados por ";#"
 - Formata datas para o padrão brasileiro (DD/MM/AAAA)
-- Converte strings para inteiros de forma segura
+- Converte strings para inteiros
 - Formata nomes próprios seguindo regras de capitalização
 - Mapeia códigos de divisão para seus nomes completos
 - Formata valores monetários para o padrão brasileiro
@@ -90,9 +90,9 @@ Obtém dados de ações de controle do SharePoint, opcionalmente filtrados por I
 
 O método `_transform_data` utiliza várias funções auxiliares internas:
 
-- `safe_split`: Realiza split de forma segura em valores separados por ";#"
-- `safe_date_format`: Formata datas de forma segura
-- `safe_int`: Converte valores para inteiros de forma segura
+- `safe_split`: Realiza split de valores separados por ";#"
+- `safe_date_format`: Formata datas
+- `safe_int`: Converte valores para inteiros
 - `safe_list_split`: Processa listas de valores com split
 - `safe_multiple_split`: Processa múltiplos valores com split
 - `safe_alternate_split`: Realiza split em elementos alternados
@@ -112,7 +112,7 @@ O método `_transform_data` utiliza várias funções auxiliares internas:
 O módulo depende das seguintes configurações:
 
 - Arquivo `.env` com as variáveis:
-  - `USUARIO`: Nome de usuário para autenticação no SharePoint
+  - `USUARIO`: Nome de usuário para autenticação no SharePoint. Formato: user.name@tce.pi.gov.br
   - `SENHA`: Senha para autenticação no SharePoint
 
 - Arquivo de mapeamento:
@@ -130,18 +130,11 @@ sp_client = Sharepoint()
 # Obter dados de uma ação de controle específica
 acao_controle = sp_client.get_acao_controle_data(item_id=3868)
 
-# Processar os dados
-if acao_controle:
-    item = acao_controle[0]
-    print(f"Unidades Fiscalizadas: {item['unidades_fiscalizadas']}")
-    print(f"Processo: {item['n_processo_eTCE']}")
-    print(f"VRF: {item['VRF']}")
-    print(f"Exercícios: {item['exercicios']}")
+print(acao_controle)
 ```
 
 ## Observações
 
 - O módulo realiza conexão automática com o site do SharePoint "https://tcepi365.sharepoint.com/sites/SecretariadeControleExterno"
 - As consultas são realizadas principalmente na lista "Cadastro de Ação de Controle"
-- O processo de transformação de dados é robusto, tratando diversos casos especiais e formatos de dados
-- Métodos com prefixo `_` são considerados internos e não devem ser chamados diretamente pelos consumidores do módulo
+- O processo de transformação trata diversos casos especiais e formatos de dados

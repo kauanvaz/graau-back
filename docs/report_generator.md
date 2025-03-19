@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O módulo `report_generator.py` fornece funcionalidade para gerar relatórios DOCX usando modelos. Ele é especializado na criação de documentos, com imagens de capa opcionais e conteúdo personalizado com base nos dados de contexto fornecidos.
+O módulo `report_generator.py` fornece funcionalidade para gerar relatórios DOCX usando templates. Ele é especializado na criação de documentos, com imagens de capa opcionais e conteúdo personalizado com base nos dados de contexto fornecidos.
 
 ## Componentes Principais
 
@@ -21,32 +21,32 @@ def __init__(self, template_path: str)
 
 **Métodos:**
 
-##### `add_cover_page`
+##### `replace_existing_image`
 
 ```python
-def add_cover_page(self, doc: DocxTemplate, image_path: Union[str, Path]) -> bool
+def replace_existing_image(self, docx_path: str, target_image_filename: str, new_image_path: Union[str, Path]) -> bool
 ```
 
-Adiciona uma imagem de capa em página inteira ao documento.
+Substitui uma imagem de capa existente.
 
 **Parâmetros:**
-- `doc`: instância DocxTemplate
-- `image_path`: Caminho para a imagem de capa
+- `docx_path`: Caminho para o arquivo DOCX
+- `target_image_filename`: Nome do arquivo de imagem a ser substituído
+- `new_image_path`: Caminho do novo arquivo de imagem
 
 **Retorna:**
-- `bool`: True se a imagem tiver sido adicionada com sucesso, False se não
+- `bool`: True se a imagem tiver sido substituída com sucesso, False se não
 
 * *Funcionalidades:**
-- Valida se o arquivo de imagem existe.
-- Configura a primeira seção do documento para remover margens.
-- Adiciona a imagem no início do documento em tamanho de página inteira.
-- Cria uma nova seção com margens normais para o conteúdo do template.
-- Registra erros caso o processo falhe.
+- Transforma o arquivo DOCX em arquivo ZIP para acesso aos arquivos internos.
+- Localiza a imagem a ser substituída.
+- Substitui a imagem original pela nova.
+- Reempacota o DOCX
 
 ##### `generate_report`
 
 ```python
-def generate_report(self, context: dict, output_path: str, cover_image_path: Optional[Union[str, Path]] = None, graau_params: dict = {}) -> bool
+def generate_report(self, context: dict, output_path: str, cover_image_path: Optional[Union[str, Path]] = None, target_image_filename: Optional[str] = "image1.png") -> bool
 ```
 
 Gera o relatório utilizando o template e o contexto fornecidos.
@@ -55,7 +55,7 @@ Gera o relatório utilizando o template e o contexto fornecidos.
 - `context`: Dicionário com as variáveis de contexto do template
 - `output_path`: Caminho para salvar o arquivo de saída
 - `cover_image_path`: Caminho opcional para a imagem de capa (padrão: None)
-- `graau_params`: Dicionário com parâmetros adicionais do relatório (padrão: dicionário vazio)
+- `target_image_filename`: Nome do arquivo de imagem a ser substituído (padrão: "image1.png")
 
 **Retorna:**
 - `bool`: True se o relatório tiver sido gerado com sucesso, False se não
@@ -78,34 +78,25 @@ Gera o relatório utilizando o template e o contexto fornecidos.
 ## Exemplo de Uso
 
 ```python
-import logging
+from src.report_generator import ReportGenerator
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+sharepoint_data = [
+    {
+        "unidades_fiscalizadas": "P. M. CIDADE",
+        "n_processo_eTCE": "TC/XXXXXX/20XX",
+        "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
+        "exercicios": "20XX, 20YY",
+        "VRF": "R$ 100.000,00"
+    }
+]
 
-# Sample data that would come from SharePoint
-sharepoint_data = {
-    "unidades_fiscalizadas": "P. M. CIDADE",
-    "n_processo_eTCE": "TC/XXXXXX/20XX",
-    "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
-    "exercicios": "20XX, 20YY",
-    "VRF": "R$ 100.000,00"
-}
+generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")
 
-# Create the report generator with the template path
-generator = ReportGenerator("templates/Relatório Padrão - GRAAU.docx")
-
-# Generate the report
 success = generator.generate_report(
-    context=sharepoint_data,
-    output_path="reports/final_report.docx",
-    cover_image_path="cover_images/cover_page.jpg"
+    context=sharepoint_data[0],
+    output_path="src/reports/report_example.docx",
+    cover_image_path="src/cover_images/cover_page_2.jpg",
 )
-
-if success:
-    print("Report generated successfully!")
-else:
-    print("Failed to generate report")
 ```
 
 ## Observações

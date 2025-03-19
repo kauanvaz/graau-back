@@ -95,21 +95,21 @@ class ReportGenerator:
                 
                 # Reempacota o DOCX com os conteúdos modificados (sobrescrevendo o arquivo original)
                 with zipfile.ZipFile(docx_path, 'w', zipfile.ZIP_DEFLATED) as new_docx:
-                    for foldername, subfolders, filenames in os.walk(temp_dir):
+                    for foldername, _, filenames in os.walk(temp_dir):
                         for filename in filenames:
                             file_path = os.path.join(foldername, filename)
                             arcname = os.path.relpath(file_path, temp_dir)
                             new_docx.write(file_path, arcname)
                 
                 self.logger.info(f"Image replaced successfully in {docx_path}")
-            # O diretório temporário é removido automaticamente ao sair do bloco 'with'
             return True
 
         except Exception as e:
             self.logger.error(f"Error replacing image: {str(e)}")
             return False
 
-    def generate_report(self, context: dict, output_path: str,
+    def generate_report(self, context: dict,
+                        output_path: str,
                         cover_image_path: Optional[Union[str, Path]] = None,
                         target_image_filename: Optional[str] = "image1.png") -> bool:
         """
@@ -121,7 +121,6 @@ class ReportGenerator:
             cover_image_path: Optional path to the cover image.
             replace_image: If True, replaces an existing image in the DOCX file.
             target_image_filename: The filename of the image in the DOCX to replace (required if replace_image is True).
-            graau_params: Additional parameters.
             
         Returns:
             bool: True if the report was generated successfully.
@@ -155,9 +154,6 @@ class ReportGenerator:
             return False
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    
-    # Example context data
     sharepoint_data = [
         {
             "unidades_fiscalizadas": "P. M. CIDADE",

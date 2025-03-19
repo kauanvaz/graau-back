@@ -4,7 +4,7 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 
 ## Endpoints
 
-### 1. Upload de Imagem de Capa
+### 1. Upload de imagem de capa
 
 **Endpoint:** `POST /api/upload-cover-image`
 
@@ -26,27 +26,83 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 }
 ```
 
-### 2. Gerar Relatório (Assíncrono)
+**Resposta (400 Bad Request):**
+```json
+{
+  "error": "Nenhum arquivo enviado"
+}
+```
+ou
+```json
+{
+  "error": "Formato de arquivo não permitido. Use: png, jpg, jpeg"
+}
+```
+ou
+```json
+{
+  "error": "Arquivo muito grande. Tamanho máximo: 5MB"
+}
+```
+
+### 2. Consultar dados do SharePoint
+
+**Endpoint:** `GET /api/sharepoint_data/<sharepoint_id>`
+
+**Descrição:** Recupera dados do SharePoint com base no ID fornecido.
+
+**Parâmetros de URL:**
+- `sharepoint_id`: ID do item no SharePoint 
+
+**Resposta (202 Accepted):**
+```json
+{
+  "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL1",
+  "divisao_origem_ajustada_diretoria": "Diretoria de Fiscalização de Pessoal e Previdência",
+  "divisao_origem_ajustada_divisao": "1ª Divisão Técnica de Fiscalização",
+  "equipe_fiscalizacao": ["Fulaxo X", "Fulano Y"],
+  "exercicios": ["2024", "2025"],
+  "n_processo_eTCE": "TC/00000/2025",
+  "processo_tipo": "...-...",
+  "procurador": "Fulano",
+  "relator": "Sicrano",
+  "subclasse": "DENÚNCIA",
+  "unidades_fiscalizadas": ["P. M. DE X", "P. M. DE Y"],
+  "VRF": "R$ 00,00",
+}
+```
+
+### 3. Gerar Relatório (Assíncrono)
 
 **Endpoint:** `POST /api/generate-report`
 
-**Descrição:** Inicia a geração assíncrona de um novo relatório baseado nos parâmetros fornecidos.
+**Descrição:** Inicia a geração assíncrona de um novo relatório baseado nos parâmetros fornecidos. `report_params` deve conter tanto os valores recuperados do Sharepoint como os demais provenientes exclusivamente do frontend (passados pelo usuário). Nomes a combinar...
 
 **Body (JSON):**
 ```json
 {
-  "sharepoint_id": "12345",
   "report_params": {
-    "title": "Relatório de Análise",
-    "author": "Nome do Autor",
-    "date": "10/03/2025"
+    "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL1",
+    "divisao_origem_ajustada_diretoria": "Diretoria de Fiscalização de Pessoal e Previdência",
+    "divisao_origem_ajustada_divisao": "1ª Divisão Técnica de Fiscalização",
+    "equipe_fiscalizacao": ["Fulaxo X", "Fulano Y"],
+    "exercicios": ["2024", "2025"],
+    "n_processo_eTCE": "TC/00000/2025",
+    "processo_tipo": "...-...",
+    "procurador": "Fulano",
+    "relator": "Sicrano",
+    "subclasse": "DENÚNCIA",
+    "unidades_fiscalizadas": ["P. M. DE X", "P. M. DE Y"],
+    "VRF": "R$ 00,00",
+    "front1": "...",
+    "front2": "...",
+    "front3": "..."
   },
   "cover_image_id": "f7e9d2c1-b3a5-4e8f-9c6d-0b2a1e3f4d5c"
 }
 ```
 
 **Campos Obrigatórios:**
-- `sharepoint_id`: ID do item no SharePoint
 - `report_params`: Parâmetros para personalização do relatório
 - `cover_image_id`: ID da imagem de capa previamente enviada
 
@@ -60,7 +116,21 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 }
 ```
 
-### 3. Verificar Status do Relatório
+**Resposta (400 Bad Request):**
+```json
+{
+  "error": "Campo(s) obrigatório(s) ausente(s): report_params, cover_image_id"
+}
+```
+
+**Resposta (404 Not Found):**
+```json
+{
+  "error": "Imagem de capa não encontrada. Faça o upload novamente."
+}
+```
+
+### 4. Verificar Status do Relatório
 
 **Endpoint:** `GET /api/report-status/<task_id>`
 
@@ -101,7 +171,14 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 }
 ```
 
-### 4. Download de Relatório
+**Resposta (404 Not Found):**
+```json
+{
+  "error": "Tarefa não encontrada"
+}
+```
+
+### 5. Download de Relatório
 
 **Endpoint:** `GET /api/reports/<report_id>`
 
@@ -110,7 +187,20 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 **Parâmetros de URL:**
 - `report_id`: ID da tarefa (task_id) ou ID que aparece no nome do arquivo do relatório
 
-**Resposta:** Arquivo DOCX para download
+**Resposta (200 OK):** Arquivo DOCX para download
+
+**Resposta (404 Not Found):**
+```json
+{
+  "error": "Relatório não encontrado"
+}
+```
+ou
+```json
+{
+  "error": "Arquivo de relatório não encontrado no servidor"
+}
+```
 
 ## Configurações do Sistema
 
@@ -126,12 +216,13 @@ A API possui as seguintes configurações:
 
 ## Fluxo de Geração Assíncrona
 
-1. Cliente faz upload da imagem de capa (opcional)
-2. Cliente envia solicitação para gerar relatório incluindo o `cover_image_id`
-3. API responde imediatamente com um `task_id`
-4. Cliente verifica o status da tarefa periodicamente
-5. Quando o relatório estiver pronto, o cliente recebe um link para download
-6. O relatório permanece disponível pelo período definido em REPORT_EXPIRATION_MINUTES
+1. Cliente faz upload da imagem de capa
+2. Cliente consulta dados do SharePoint.
+3. Cliente envia solicitação para gerar relatório incluindo `report_params` e `cover_image_id`
+4. API responde imediatamente com um `task_id`
+5. Cliente verifica o status da tarefa periodicamente
+6. Quando o relatório estiver pronto, o cliente recebe um link para download
+7. O relatório permanece disponível pelo período definido em REPORT_EXPIRATION_MINUTES
 
 ## Exemplos de Uso
 
@@ -160,6 +251,12 @@ async function uploadCoverImage(fileInput) {
   }
 }
 
+// Consultar dados do SharePoint
+async function getSharePointData(sharePointId) {
+  const response = await fetch(`/api/sharepoint_data/${sharePointId}`);
+  return await response.json();
+}
+
 // Exemplo de geração de relatório
 async function generateReport(imageId) {
   // Iniciar a geração do relatório
@@ -169,11 +266,22 @@ async function generateReport(imageId) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      sharepoint_id: "12345",
       report_params: {
-        title: "Relatório de Análise",
-        author: "Nome do Autor",
-        date: "10/03/2025"
+        divisao_origem_ajustada: "DFPESSOAL/DFPESSOAL1",
+        divisao_origem_ajustada_diretoria: "Diretoria de Fiscalização de Pessoal e Previdência",
+        divisao_origem_ajustada_divisao: "1ª Divisão Técnica de Fiscalização",
+        equipe_fiscalizacao: ["Fulaxo X", "Fulano Y"],
+        exercicios: ["2024", "2025"],
+        n_processo_eTCE: "TC/00000/2025",
+        processo_tipo: "...-...",
+        procurador: "Fulano",
+        relator: "Sicrano",
+        subclasse: "DENÚNCIA",
+        unidades_fiscalizadas: ["P. M. DE X", "P. M. DE Y"],
+        VRF: "R$ 00,00",
+        front1: "...",
+        front2: "...",
+        front3: "..."
       },
       cover_image_id: imageId
     })
