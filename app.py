@@ -1,5 +1,6 @@
 # app.py
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 import os
 import json
 import uuid
@@ -23,6 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)
 
 # Diretório onde os relatórios serão armazenados
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src/reports')
@@ -46,7 +48,7 @@ if not os.path.exists(REPORTS_TRACKER):
         json.dump([], f)
 
 # Configurações da API - TORNADAS FACILMENTE CONFIGURÁVEIS
-app.config['REPORT_EXPIRATION_MINUTES'] = 15  # Valor padrão de 30 minutos
+app.config['REPORT_EXPIRATION_MINUTES'] = 15  # Valor padrão de 15 minutos
 app.config['CLEANUP_INTERVAL_SECONDS'] = 300  # Verificar a cada 5 minutos
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
 app.config['MAX_IMAGE_SIZE'] = 5 * 1024 * 1024  # 5MB
