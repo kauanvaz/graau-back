@@ -19,6 +19,7 @@ class Sharepoint():
         password = os.getenv("SENHA")
         self.site = Site(site_url, authcookie=Office365(site_url_base, username=username, password=password).GetCookies())
         self.diretorias_mapping = load_json(Path('src/mappings/diretorias.json'))
+        self.divisoes_mapping = load_json(Path('src/mappings/divisoes.json'))
         
         load_dotenv()
 
@@ -134,18 +135,6 @@ class Sharepoint():
                     resultado.append(palavra)
             
             return ' '.join(resultado)
-        
-        def mapear_divisao(nome):
-            if nome == "DAJUR":
-                return "Divisão de Apoio ao Jurisdicionado"
-            
-            # Procura um ou mais dígitos no final da string
-            match = re.search(r'(\d+)$', nome)
-            if match:
-                numero = match.group(1)
-                return f"{numero}ª Divisão Técnica de Fiscalização"
-            
-            return nome  
 
         return [
             {
@@ -165,7 +154,7 @@ class Sharepoint():
                     self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[0], '')
                     ),
                 'divisao_origem_ajustada_divisao': (
-                    mapear_divisao(i.get('Divisão de Origem Ajustada', '').split('/')[1])
+                    self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[1], '')
                     ),
                 'equipe_fiscalizacao': safe_list_split(i.get('Equipe de Fiscalização', [])),
                 'exercicios': safe_alternate_split(i.get('Exercícios', [])),
