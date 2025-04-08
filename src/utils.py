@@ -10,3 +10,24 @@ def load_json(path):
     except json.JSONDecodeError:
         print(f"Erro: Arquivo '{path}' contém um JSON inválido.")
         return {}
+    
+def format_data(data):
+    """
+    Formata os dados para o formato desejado.
+    
+    Args:
+        data (dict): Dados a serem formatados.
+        
+    Returns:
+        dict: Dados formatados.
+    """
+
+    formatted_data = {}
+    
+    for key, value in data.items():
+        if isinstance(value, list):
+            formatted_data[key] = "\n".join(value)
+        else:
+            formatted_data[key] = value
+            
+    return formatted_data

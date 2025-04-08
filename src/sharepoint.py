@@ -3,9 +3,13 @@ from shareplum import Office365
 import os
 from dotenv import load_dotenv
 from babel.numbers import format_currency
-from .utils import load_json
 from pathlib import Path
 import re
+
+try:
+    from .utils import load_json
+except ImportError:
+    from utils import load_json
 
 class Sharepoint():
     def __init__(self) -> None:

@@ -9,6 +9,7 @@ import threading
 import time
 from src.report_generator import ReportGenerator
 from src.sharepoint import Sharepoint
+from src.utils import format_data
 import logging
 import concurrent.futures
 
@@ -155,9 +156,10 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
         
         # Adicionar parâmetros para o relatório
         report_params = data['report_params'].copy() if 'report_params' in data else {}
+        formatted_data = format_data(report_params)
         
         report_generator.generate_report(
-            context=report_params,
+            context=formatted_data,
             output_path=filepath,
             cover_image_path=cover_image_path,
         )
