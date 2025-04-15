@@ -151,10 +151,10 @@ class Sharepoint():
                 'dias_em_atividade': safe_int(i.get('Dias em atividade', 0)),
                 'divisao_origem_ajustada': i.get('Divisão de Origem Ajustada', ''),
                 'divisao_origem_ajustada_diretoria': (
-                    self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[0], '')
+                    self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[0].strip(), '')
                     ),
                 'divisao_origem_ajustada_divisao': (
-                    self.diretorias_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[1], '')
+                    self.divisoes_mapping.get(i.get('Divisão de Origem Ajustada', '').split('/')[1].strip(), '')
                     ),
                 'equipe_fiscalizacao': safe_list_split(i.get('Equipe de Fiscalização', [])),
                 'exercicios': safe_alternate_split(i.get('Exercícios', [])),
