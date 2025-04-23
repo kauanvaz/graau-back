@@ -11,9 +11,36 @@ def load_json(path):
         print(f"Erro: Arquivo '{path}' contém um JSON inválido.")
         return {}
     
+def _clean_secoes(secoes):
+    def clean(secao):
+        titulo_principal = secao.get("title")
+        subtitulos = []
+
+        for sub in secao.get("subtitles", []):
+            if titulo_principal == "ACHADOS/ RESULTADOS/ ANÁLISES": print(sub.get("title"))
+            # Ignora subtítulos irrelevantes
+            if "Digite o nome do título" in sub.get("title", ""):
+                continue
+
+            # Aplica a função recursivamente para pegar títulos aninhados
+            subtitulo_limpo = clean(sub)
+            if subtitulo_limpo:  # Se não for None
+                subtitulos.append(subtitulo_limpo)
+
+        # Retorna o dicionário apenas se o título for válido
+        if "Digite o nome do título" not in titulo_principal:
+            return {
+                "title": titulo_principal,
+                "subtitles": subtitulos
+            }
+        return None
+
+    # Aplica a função de limpeza para todas as seções de nível 1
+    return [secao_limpa for secao in secoes if (secao_limpa := clean(secao))]
+
 def format_data(data):
     """
-    Formata os dados para o formato desejado.
+    Formata os dados para o formato desejado no relatório.
     
     Args:
         data (dict): Dados a serem formatados.
@@ -25,9 +52,15 @@ def format_data(data):
     formatted_data = {}
     
     for key, value in data.items():
-        if isinstance(value, list):
-            formatted_data[key] = "\n".join(value)
+        if isinstance(value, list) and len(value) > 0:
+            if isinstance(value[0], str): # Lista do sharepoint
+                formatted_data[key] = "\n".join(value)
+            elif isinstance(value[0], dict): # Lista do front (seções)
+                formatted_data[key] = _clean_secoes(value)
         else:
-            formatted_data[key] = value
-            
+            if key == "subclasse":
+                formatted_data[key] = value.upper()
+            else:
+                formatted_data[key] = value
+
     return formatted_data
