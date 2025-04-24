@@ -1,4 +1,5 @@
 import json
+from unidecode import unidecode
 
 def load_json(path):
     try:
@@ -10,14 +11,38 @@ def load_json(path):
     except json.JSONDecodeError:
         print(f"Erro: Arquivo '{path}' contém um JSON inválido.")
         return {}
+
+def _clean_string(string):
+    # Lista de preposições comuns em português
+    preposicoes = {
+        'a', 'ante', 'após', 'até', 'com', 'contra', 'de', 'desde',
+        'em', 'entre', 'para', 'per', 'perante', 'por', 'sem',
+        'sob', 'sobre', 'trás', 'o', 'os', 'a', 'as', 'um', 'uma',
+        'uns', 'umas', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas',
+        'ao', 'aos', 'à', 'às', 'pelo', 'pela', 'pelos', 'pelas'
+    }
     
+    texto = string.lower()
+
+    # Remove acentuação
+    texto = unidecode(texto)
+
+    # Divide em palavras
+    palavras = texto.split()
+
+    # Remove preposições
+    palavras_filtradas = [p for p in palavras if p not in preposicoes]
+
+    # Junta com underline
+    return '_'.join(palavras_filtradas)
+
+
 def _clean_secoes(secoes):
     def clean(secao):
         titulo_principal = secao.get("title")
         subtitulos = []
 
         for sub in secao.get("subtitles", []):
-            if titulo_principal == "ACHADOS/ RESULTADOS/ ANÁLISES": print(sub.get("title"))
             # Ignora subtítulos irrelevantes
             if "Digite o nome do título" in sub.get("title", ""):
                 continue
@@ -31,19 +56,20 @@ def _clean_secoes(secoes):
         if "Digite o nome do título" not in titulo_principal:
             return {
                 "title": titulo_principal,
-                "subtitles": subtitulos
+                "subtitles": subtitulos,
+                "machine_name": _clean_string(titulo_principal)
             }
         return None
 
     # Aplica a função de limpeza para todas as seções de nível 1
     return [secao_limpa for secao in secoes if (secao_limpa := clean(secao))]
 
-def format_data(data):
+def format_data(data: dict):
     """
     Formata os dados para o formato desejado no relatório.
     
     Args:
-        data (dict): Dados a serem formatados.
+        data: Dados a serem formatados.
         
     Returns:
         dict: Dados formatados.
