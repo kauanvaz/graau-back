@@ -1,5 +1,5 @@
 from typing import Union, Optional
-from docx.shared import Pt, Inches
+from docx.enum.text import WD_BREAK
 from docxtpl import DocxTemplate
 from pathlib import Path
 import logging
@@ -13,58 +13,6 @@ class ReportGenerator:
         self.template_path = template_path
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-
-    def add_cover_page(self, doc: DocxTemplate, image_path: Union[str, Path]) -> bool:
-        """
-        Adds a full-page cover image to the document before the template content.
-        """
-        try:
-            image_path = Path(image_path)
-            if not image_path.exists():
-                raise FileNotFoundError(f"Image not found: {image_path}")
-
-            document = doc.get_docx()
-            section = document.sections[0]
-
-            # Remove margins for the cover page
-            section.left_margin = Inches(0)
-            section.right_margin = Inches(0)
-            section.top_margin = Inches(0)
-            section.bottom_margin = Inches(0)
-
-            # Clear the first paragraph of any existing content
-            if document.paragraphs:
-                first_paragraph = document.paragraphs[0]
-                for i in range(len(first_paragraph.runs)):
-                    first_paragraph._p.remove(first_paragraph.runs[0]._r)
-            else:
-                first_paragraph = document.add_paragraph()
-
-            paragraph_format = first_paragraph.paragraph_format
-            paragraph_format.left_indent = Inches(0)
-            paragraph_format.right_indent = Inches(0)
-            paragraph_format.space_before = Pt(0)
-            paragraph_format.space_after = Pt(0)
-            paragraph_format.line_spacing = 1.0
-
-            run = first_paragraph.add_run()
-            width = section.page_width
-            height = section.page_height
-            run.add_picture(str(image_path), width=width, height=height)
-
-            # Add a new section with normal margins for the template content
-            document.add_section()
-            new_section = document.sections[-1]
-            new_section.left_margin = Inches(1)
-            new_section.right_margin = Inches(1)
-            new_section.top_margin = Inches(1)
-            new_section.bottom_margin = Inches(1)
-
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Error adding cover image: {str(e)}")
-            return False
 
     def replace_existing_image(self, docx_path: str, target_image_filename: str, new_image_path: Union[str, Path]) -> bool:
         """
@@ -107,6 +55,70 @@ class ReportGenerator:
         except Exception as e:
             self.logger.error(f"Error replacing image: {str(e)}")
             return False
+        
+    def insert_headings_recursively(self, doc, headings: list, index: int, level: int=1):
+        """
+        Insere os títulos e subtítulos no documento de forma recursiva.
+        Args:
+            headings: Lista de dicionários com os títulos e subtítulos.
+            index: Índice onde o título será inserido.
+            level: Nível do título (1 para Heading 1, 2 para Heading 2, etc.).
+            
+        Returns:
+            None
+        """
+        # Se for uma lista vazia não faz nada
+        if not headings:
+            return index
+        
+        current_index = index
+        for sec in headings:
+            # Adiciona uma quebra de página antes de cada título de nível 1
+            if level == 1:
+                doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+            
+            doc.paragraphs.insert(index, doc.add_paragraph(sec["title"], style=f"Heading {level}"))
+            
+            current_index += 1
+            # Chama recursivamente para os subtítulos
+            self.insert_headings_recursively(doc=doc, headings=sec["subtitles"], index=current_index, level=level+1)
+            
+        return current_index
+
+    def generate_headings_from_structure(self, doc, headings: list):
+        """
+        Gera os tópicos a partir da estrutura fornecida.
+        Os estilos já devem existir no template.
+        Args:
+            headings: Lista de dicionários com os títulos e subtítulos.
+            
+        Returns:
+            None
+        """
+        
+        # Localiza o marcador e substitui
+        for i, paragraph in enumerate(doc.paragraphs):
+            if "<CONTEUDO>" in paragraph.text:
+                # Remove o marcador
+                p = paragraph.clear()
+                
+                if not headings:
+                    # Se não houver títulos, remove o marcador e sai
+                    return
+                
+                # Começa a inserir o primeiro título a partir do paragrafo do marcador
+                p.text = headings[0]["title"]
+                p.style = "Heading 1"
+                next_index = i + 1
+                
+                # Insere os subtítulos do primeiro título
+                next_index = self.insert_headings_recursively(doc=doc, headings=headings[0]["subtitles"], index=next_index, level=2)
+
+                # Insere os subtítulos restantes, se houver
+                if len(headings) > 1:
+                    self.insert_headings_recursively(doc=doc, headings=headings[1:], index=next_index, level=1)
+                
+                break
 
     def generate_report(self, context: dict,
                         output_path: str,
@@ -128,6 +140,8 @@ class ReportGenerator:
         try:
             doc = DocxTemplate(self.template_path)
 
+            self.generate_headings_from_structure(doc=doc.get_docx(), headings=context.get("seccoes", []))
+            
             if cover_image_path:
                 # Render the document and save it temporarily
                 temp_output = "temp_report.docx"

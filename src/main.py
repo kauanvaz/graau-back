@@ -20,8 +20,82 @@ if __name__ == "__main__":
     
     # Criar o gerador de relatórios
     generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")
-    
     formatted_data = format_data(sharepoint_data[0])
+    formatted_data["seccoes"] = [
+        {
+            "title": "Introdução",
+            "subtitles": [
+                {
+                    "title": "Objetivo",
+                    "subtitles": [
+                        {
+                            "title": "Objetivo Amplo",
+                            "subtitles": []
+                        },
+                        {
+                            "title": "Objetivo Específico",
+                            "subtitles": []
+                        }
+                    ]
+                },
+                {
+                    "title": "Escopo",
+                    "subtitles": [
+                        {
+                            "title": "Escopo geral",
+                            "subtitles": []
+                        },
+                        {
+                            "title": "Escopo intrínseco",
+                            "subtitles": [
+                                {
+                                    "title": "Jurisdição", "subtitles": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Metodologia", "subtitles": [
+                {
+                    "title": "Coleta de Dados",
+                    "subtitles": []
+                },
+                {
+                    "title": "Análise estatística",
+                    "subtitles": []
+                }
+            ]
+        },
+        {
+            "title": "Resultados",
+            "subtitles": [
+                {
+                    "title": "Resultados gerais",
+                    "subtitles": []
+                },
+                {
+                    "title": "Resultados específicos",
+                    "subtitles": []
+                }
+            ]
+        },
+        {
+            "title": "Conclusão",
+            "subtitles": [
+                {
+                    "title": "Considerações finais",
+                    "subtitles": []
+                },
+                {
+                    "title": "Recomendações",
+                    "subtitles": []
+                }
+            ]
+        }
+    ]
     
     # Gerar relatório
     success = generator.generate_report(
