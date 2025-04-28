@@ -1,5 +1,6 @@
 from typing import Union, Optional
-from docx.enum.text import WD_BREAK
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_BREAK, WD_ALIGN_PARAGRAPH
 from docxtpl import DocxTemplate
 from pathlib import Path
 import logging
@@ -13,7 +14,136 @@ class ReportGenerator:
         self.template_path = template_path
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+        
+    def _insert_headings_recursively(self, doc, headings: list, index: int, level: int=1):
+        """
+        Insere os títulos e subtítulos no documento de forma recursiva.
+        Args:
+            headings: Lista de dicionários com os títulos e subtítulos.
+            index: Índice onde o título será inserido.
+            level: Nível do título (1 para Heading 1, 2 para Heading 2, etc.).
+            
+        Returns:
+            None
+        """
+        # Se for uma lista vazia não faz nada
+        if not headings:
+            return index
+        
+        current_index = index
+        for sec in headings:
+            # Adiciona uma quebra de página antes de cada título de nível 1
+            if level == 1:
+                doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+            
+            doc.paragraphs.insert(index, doc.add_paragraph(sec["title"], style=f"Heading {level}"))
+            
+            current_index += 1
+            # Chama recursivamente para os subtítulos
+            self._insert_headings_recursively(doc=doc, headings=sec["subtitles"], index=current_index, level=level+1)
+            
+        return current_index
+    
+    def _get_signing_area_name(self, headings: list) -> str:
+        list_headings_level_1 = [h["title"].lower() for h in headings]
+        
+        if "proposta de encaminhamentos" in list_headings_level_1:
+            return "proposta de encaminhamentos"
+        elif "conclusão" in list_headings_level_1:
+            return "conclusão"
+        
+        return None
+    
+    def _add_content(self, doc, text=None, bold=False, color=None, alignment=None, font='Segoe UI', space_after=0):
+        p = doc.add_paragraph()
+        p.paragraph_format.space_after = Pt(space_after)
+        
+        if not text:
+            return
+        
+        run = p.add_run(text)
+        
+        if bold:
+            run.font.bold = True
+        if color:
+            run.font.color.rgb = color
+        if alignment:
+            p.alignment = alignment
+        
+        run.font.name = font
 
+    def _add_signing_content(self, doc):
+        # Espaço em branco
+        for _ in range(5):
+            self._add_content(doc)
+
+        # Instrução
+        self._add_content(doc, "Instrução:", bold=True, font='Segoe UI Semibold', space_after=8)
+        self._add_content(doc, "[informar auditores signatários]", color=RGBColor(191, 143, 0), alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+
+        # Supervisão
+        self._add_content(doc, "Supervisão:", bold=True, font='Segoe UI Semibold', space_after=8)
+        self._add_content(doc, "(assinado digitalmente)", color=RGBColor(128, 128, 128), alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+        self._add_content(doc, "[Nome]", color=RGBColor(191, 143, 0), alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+        self._add_content(doc, "Auditor(a) de Controle Externo", alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+        self._add_content(doc, "Chefe da {{divisao_origem_ajustada_divisao}}", alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+
+        # Visto
+        self._add_content(doc, "Visto:", bold=True, font='Segoe UI Semibold', space_after=8)
+        self._add_content(doc, "(assinado digitalmente)", color=RGBColor(128, 128, 128), alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+        self._add_content(doc, "[Nome]", color=RGBColor(191, 143, 0), alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+        self._add_content(doc, "Diretor(a) da {{divisao_origem_ajustada_diretoria}}", alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
+
+        # Parágrafo em branco
+        self._add_content(doc)
+
+    def generate_headings_from_structure(self, doc, headings: list):
+        """
+        Gera os tópicos a partir da estrutura fornecida.
+        Os estilos já devem existir no template.
+        Args:
+            headings: Lista de dicionários com os títulos e subtítulos.
+            
+        Returns:
+            None
+        """
+        
+        # Localiza o marcador e substitui
+        for i, paragraph in enumerate(doc.paragraphs):
+            if "<CONTEUDO>" in paragraph.text:
+                # Remove o marcador
+                p = paragraph.clear()
+                
+                if not headings:
+                    # Se não houver títulos, remove o marcador e sai
+                    return
+                
+                # Começa a inserir o primeiro título a partir do paragrafo do marcador
+                p.text = headings[0]["title"]
+                p.style = "Heading 1"
+                next_index = i + 1
+                
+                # Insere os subtítulos do primeiro título
+                next_index = self._insert_headings_recursively(doc=doc, headings=headings[0]["subtitles"], index=next_index, level=2)
+
+                # Insere os subtítulos restantes, se houver
+                if len(headings) > 1:
+                    self._insert_headings_recursively(doc=doc, headings=headings[1:], index=next_index, level=1)
+                
+                break
+            
+        assinaturas_area = self._get_signing_area_name(headings)
+        
+        if not assinaturas_area:
+            return
+        
+        for i, paragraph in enumerate(doc.paragraphs):
+            if assinaturas_area in paragraph.text.lower():
+                # Adiciona a conteúdo da área de assinatura logo após o parágrafo
+                doc.paragraphs.insert(i+1, self._add_signing_content(doc))
+                
+                break
+            
     def replace_existing_image(self, docx_path: str, target_image_filename: str, new_image_path: Union[str, Path]) -> bool:
         """
         Replace an existing image in the DOCX file by modifying its underlying ZIP archive.
@@ -55,72 +185,9 @@ class ReportGenerator:
         except Exception as e:
             self.logger.error(f"Error replacing image: {str(e)}")
             return False
-        
-    def insert_headings_recursively(self, doc, headings: list, index: int, level: int=1):
-        """
-        Insere os títulos e subtítulos no documento de forma recursiva.
-        Args:
-            headings: Lista de dicionários com os títulos e subtítulos.
-            index: Índice onde o título será inserido.
-            level: Nível do título (1 para Heading 1, 2 para Heading 2, etc.).
-            
-        Returns:
-            None
-        """
-        # Se for uma lista vazia não faz nada
-        if not headings:
-            return index
-        
-        current_index = index
-        for sec in headings:
-            # Adiciona uma quebra de página antes de cada título de nível 1
-            if level == 1:
-                doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
-            
-            doc.paragraphs.insert(index, doc.add_paragraph(sec["title"], style=f"Heading {level}"))
-            
-            current_index += 1
-            # Chama recursivamente para os subtítulos
-            self.insert_headings_recursively(doc=doc, headings=sec["subtitles"], index=current_index, level=level+1)
-            
-        return current_index
 
-    def generate_headings_from_structure(self, doc, headings: list):
-        """
-        Gera os tópicos a partir da estrutura fornecida.
-        Os estilos já devem existir no template.
-        Args:
-            headings: Lista de dicionários com os títulos e subtítulos.
-            
-        Returns:
-            None
-        """
-        
-        # Localiza o marcador e substitui
-        for i, paragraph in enumerate(doc.paragraphs):
-            if "<CONTEUDO>" in paragraph.text:
-                # Remove o marcador
-                p = paragraph.clear()
-                
-                if not headings:
-                    # Se não houver títulos, remove o marcador e sai
-                    return
-                
-                # Começa a inserir o primeiro título a partir do paragrafo do marcador
-                p.text = headings[0]["title"]
-                p.style = "Heading 1"
-                next_index = i + 1
-                
-                # Insere os subtítulos do primeiro título
-                next_index = self.insert_headings_recursively(doc=doc, headings=headings[0]["subtitles"], index=next_index, level=2)
-
-                # Insere os subtítulos restantes, se houver
-                if len(headings) > 1:
-                    self.insert_headings_recursively(doc=doc, headings=headings[1:], index=next_index, level=1)
-                
-                break
-
-    def generate_report(self, context: dict,
+    def generate_report(self,
+                        context: dict,
                         output_path: str,
                         cover_image_path: Optional[Union[str, Path]] = None,
                         target_image_filename: Optional[str] = "image1.png") -> bool:

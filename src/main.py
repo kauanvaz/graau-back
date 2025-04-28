@@ -85,16 +85,11 @@ if __name__ == "__main__":
         },
         {
             "title": "Conclusão",
-            "subtitles": [
-                {
-                    "title": "Considerações finais",
-                    "subtitles": []
-                },
-                {
-                    "title": "Recomendações",
-                    "subtitles": []
-                }
-            ]
+            "subtitles": []
+        },
+        {
+            "title": "Proposta de encaminhamentos",
+            "subtitles": []
         }
     ]
     
