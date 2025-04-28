@@ -1,6 +1,8 @@
 babel==2.16.0
 docxtpl==0.19.1
 Flask==3.1.0
-python-dotenv==1.0.1
+flask_cors==5.0.1
+python-dotenv==1.1.0
 python_docx==1.1.2
 SharePlum==0.5.1
+Unidecode==1.4.0
