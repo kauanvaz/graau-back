@@ -178,7 +178,8 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
             "created_at": datetime.datetime.now().isoformat(),
             "status": "completed",
             "task_id": task_id,
-            "cover_image": os.path.basename(cover_image_path) if cover_image_path else None
+            "cover_image": os.path.basename(cover_image_path) if cover_image_path else None,
+            "download_name":  data.get('nome_relatorio', os.path.basename(filepath)),
         }
         
         tracker_data = load_reports_tracker()
@@ -292,7 +293,7 @@ def generate_report():
             return jsonify({"error": "Nenhum dado JSON recebido"}), 400
         
         # Validação de campos obrigatórios
-        required_fields = ['report_params', 'cover_image_id']
+        required_fields = ['report_params', 'cover_image_id', 'nome_relatorio']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({"error": f"Campo(s) obrigatório(s) ausente(s): {', '.join(missing_fields)}"}), 400
@@ -348,7 +349,8 @@ def get_report_status(task_id):
                 for report in tracker_data:
                     if report.get("task_id") == task_id:
                         status_data["download_url"] = f"/api/reports/{task_id}"
-                        status_data["filename"] = report["filename"]
+                        status_data["filename"] = report["filename"],
+                        status_data["download_name"] = report["download_name"]
                         break
             
             return jsonify(status_data)
@@ -362,7 +364,8 @@ def get_report_status(task_id):
                     "message": "Relatório gerado com sucesso",
                     "progress": 100,
                     "download_url": f"/api/reports/{task_id}",
-                    "filename": report["filename"]
+                    "filename": report["filename"],
+                    "download_name": report["download_name"]
                 })
         
         # Não encontrado
@@ -394,7 +397,7 @@ def download_report(report_id):
     return send_file(
         filepath, 
         as_attachment=True,
-        download_name=f"{report['filename']}.docx",
+        download_name=f"{report['download_name']}.docx",
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
 
