@@ -1,5 +1,6 @@
 import json
 from unidecode import unidecode
+from pathlib import Path
 
 def load_json(path):
     try:
@@ -90,3 +91,37 @@ def format_data(data: dict):
                 formatted_data[key] = value
 
     return formatted_data
+
+def get_status_processo(tipo_relatorio: str, processo_tipo: str):
+    """
+    Retorna o status do processo com base no tipo de relatório
+    e tipo de processo mapeados.
+    
+    Args:
+        tipo_relatorio: Tipo de relatório
+        processo_tipo: Tipo de processo
+    
+    Returns:
+        str: Status do processo.
+    """
+
+    mapping_path = Path("src/mappings/status_processo.json")
+    mapping = load_json(mapping_path)
+    
+    first_layer = mapping.get(tipo_relatorio.lower(), {})
+    
+    if not first_layer:
+        return ""
+    
+    # Pega lista de opções de tipos de processo e remove o último elemento, que é o "default"
+    options = list(first_layer.keys())
+    options.pop(-1)
+    
+    # Verifica se o tipo de processo está na lista de opções, capturando o índice
+    bool_list = [option in processo_tipo.lower() for option in options]
+    true_index = bool_list.index(True) if any(bool_list) else -1
+    
+    if true_index != -1:
+        return first_layer.get(options[true_index], "")
+    else:
+        return first_layer.get("default", "")

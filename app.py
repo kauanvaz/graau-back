@@ -9,7 +9,7 @@ import threading
 import time
 from src.report_generator import ReportGenerator
 from src.sharepoint import Sharepoint
-from src.utils import format_data
+from src.utils import format_data, get_status_processo
 import logging
 import concurrent.futures
 
@@ -67,7 +67,6 @@ def load_reports_tracker():
             return json.load(f)
     except (json.JSONDecodeError, FileNotFoundError):
         return []
-
 
 def save_reports_tracker(tracker_data):
     """Salva o rastreador de relatórios no arquivo JSON."""
@@ -156,7 +155,16 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
         
         # Adicionar parâmetros para o relatório
         report_params = data['report_params'].copy() if 'report_params' in data else {}
+        
         formatted_data = format_data(report_params)
+        
+        # Adiciona status do processo
+        tipo_relatorio = report_params.get("tipo_relatorio", "")
+        processo_tipo = report_params.get("processo_tipo", "")
+        status_processo = get_status_processo(tipo_relatorio, processo_tipo)
+        
+        if status_processo:
+            formatted_data["status_processo"] = status_processo
         
         report_generator.generate_report(
             context=formatted_data,

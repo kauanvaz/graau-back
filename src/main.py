@@ -1,7 +1,7 @@
 import json
 from sharepoint import Sharepoint
 from report_generator import ReportGenerator
-from utils import format_data
+from utils import format_data, get_status_processo
 
 def generate_json(data):
     # Salvar os dados em um arquivo JSON
@@ -58,7 +58,8 @@ if __name__ == "__main__":
             ]
         },
         {
-            "title": "Metodologia", "subtitles": [
+            "title": "Metodologia",
+            "subtitles": [
                 {
                     "title": "Coleta de Dados",
                     "subtitles": []
@@ -96,6 +97,13 @@ if __name__ == "__main__":
             ]
         }
     ]
+    
+    tipo_relatorio = "Recurso" # Vem do frontend
+    formatted_data["tipo_relatorio"] = tipo_relatorio
+    status_processo = get_status_processo(tipo_relatorio, formatted_data["processo_tipo"])
+    
+    if status_processo:
+        formatted_data["status_processo"] = status_processo
     
     # Gerar relatório
     success = generator.generate_report(

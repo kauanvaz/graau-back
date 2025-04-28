@@ -1,0 +1,20 @@
+{
+    "preliminar": {
+        "auditoria": "Pendente de deliberação colegiada",
+        "levantamento": "Pendente de deliberação colegiada",
+        "monitoramento": "Pendente de contraditório e deliberação colegiada",
+        "acompanhamento": "Pendente de contraditório e deliberação colegiada",
+        "inspeção": "Pendente de contraditório e deliberação colegiada",
+        "contas": "Pendente de contraditório e deliberação colegiada",
+        "default": "Pendente de contraditório e deliberação colegiada"
+    },
+    "instrução": {
+        "auditoria": "Pendente de deliberação colegiada",
+        "levantamento": "Pendente de deliberação colegiada",
+        "monitoramento": "Pendente de deliberação colegiada",
+        "acompanhamento": "Pendente de deliberação colegiada",
+        "inspeção": "Pendente de deliberação colegiada",
+        "contas": "Pendente de deliberação",
+        "default": "Pendente de deliberação colegiada"
+    }
+}
