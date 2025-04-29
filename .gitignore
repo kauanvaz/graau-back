@@ -177,6 +177,5 @@ cython_debug/
 test_data.json
 pending_reports/
 src/reports/*.docx
-src/backup_report_generator_versao1.py
-src/temp_cover_images/
 src/reports/reports_tracker.json
+src/temp_cover_images/

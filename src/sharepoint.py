@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 from babel.numbers import format_currency
 from pathlib import Path
-import re
 
 try:
     from .utils import load_json

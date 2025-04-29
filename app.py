@@ -10,19 +10,10 @@ import time
 from src.report_generator import ReportGenerator
 from src.sharepoint import Sharepoint
 from src.utils import format_data, get_status_processo
-import logging
+from src.config.logging import get_logger
 import concurrent.futures
 
-# Configuração do logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("api.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 app = Flask(__name__)
 CORS(app)
@@ -81,7 +72,7 @@ def allowed_file(filename):
 def cleanup_old_reports():
     """Remove relatórios antigos com base na configuração REPORT_EXPIRATION_MINUTES."""
     while True:
-        logger.info(f"Iniciando limpeza de relatórios antigos (limite: {app.config['REPORT_EXPIRATION_MINUTES']} minutos)")
+        logger.debug(f"Iniciando limpeza de relatórios antigos (limite: {app.config['REPORT_EXPIRATION_MINUTES']} minutos)")
         tracker_data = load_reports_tracker()
         current_time = datetime.datetime.now()
         updated_tracker = []
@@ -95,14 +86,14 @@ def cleanup_old_reports():
                 try:
                     if os.path.exists(report_path):
                         os.remove(report_path)
-                        logger.info(f"Relatório excluído: {report['filename']}")
+                        logger.debug(f"Relatório excluído: {report['filename']}")
                         
-                        # Remover imagem de capa associada, se houver
+                    # Remover imagem de capa associada, se houver
                     if 'cover_image' in report and report['cover_image']:
                         cover_path = os.path.join(COVER_IMAGES_DIR, report['cover_image'])
                         if os.path.exists(cover_path):
                             os.remove(cover_path)
-                            logger.info(f"Imagem de capa excluída: {report['cover_image']}")
+                            logger.debug(f"Imagem de capa excluída: {report['cover_image']}")
                             
                     # Remover arquivo de status
                     status_file = os.path.join(PENDING_DIR, f"{report.get('task_id', '')}.json")
@@ -115,7 +106,7 @@ def cleanup_old_reports():
                 updated_tracker.append(report)
         
         save_reports_tracker(updated_tracker)
-        logger.info(f"Limpeza concluída. {len(tracker_data) - len(updated_tracker)} relatórios removidos.")
+        logger.debug(f"Limpeza concluída. {len(tracker_data) - len(updated_tracker)} relatórios removidos.")
         
         # Executar a limpeza com base no intervalo configurado
         time.sleep(app.config['CLEANUP_INTERVAL_SECONDS'])
