@@ -85,10 +85,7 @@ def format_data(data: dict):
             elif isinstance(value[0], dict): # Lista do front (seções)
                 formatted_data[key] = _clean_secoes(value)
         else:
-            if key == "subclasse":
-                formatted_data[key] = value.upper()
-            else:
-                formatted_data[key] = value
+            formatted_data[key] = value
 
     return formatted_data
 
