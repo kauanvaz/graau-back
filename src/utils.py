@@ -13,53 +13,62 @@ def load_json(path):
         print(f"Erro: Arquivo '{path}' contém um JSON inválido.")
         return {}
 
-def _clean_string(string):
-    # Lista de preposições comuns em português
-    preposicoes = {
-        'a', 'ante', 'após', 'até', 'com', 'contra', 'de', 'desde',
-        'em', 'entre', 'para', 'per', 'perante', 'por', 'sem',
-        'sob', 'sobre', 'trás', 'o', 'os', 'a', 'as', 'um', 'uma',
-        'uns', 'umas', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas',
-        'ao', 'aos', 'à', 'às', 'pelo', 'pela', 'pelos', 'pelas'
-    }
+# def _clean_string(string):
+#     # Lista de preposições comuns em português
+#     preposicoes = {
+#         'a', 'ante', 'após', 'até', 'com', 'contra', 'de', 'desde',
+#         'em', 'entre', 'para', 'per', 'perante', 'por', 'sem',
+#         'sob', 'sobre', 'trás', 'o', 'os', 'a', 'as', 'um', 'uma',
+#         'uns', 'umas', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas',
+#         'ao', 'aos', 'à', 'às', 'pelo', 'pela', 'pelos', 'pelas'
+#     }
     
-    texto = string.lower()
+#     texto = string.lower()
 
-    # Remove acentuação
-    texto = unidecode(texto)
+#     # Remove acentuação
+#     texto = unidecode(texto)
 
-    # Divide em palavras
-    palavras = texto.split()
+#     # Divide em palavras
+#     palavras = texto.split()
 
-    # Remove preposições
-    palavras_filtradas = [p for p in palavras if p not in preposicoes]
+#     # Remove preposições
+#     palavras_filtradas = [p for p in palavras if p not in preposicoes]
 
-    # Junta com underline
-    return '_'.join(palavras_filtradas)
-
+#     # Junta com underline
+#     return '_'.join(palavras_filtradas)
 
 def _clean_secoes(secoes):
     def clean(secao):
-        titulo_principal = secao.get("title")
-        subtitulos = []
+        level_title = secao.get("title")
+        data = []
 
-        for sub in secao.get("subtitles", []):
-            # Ignora subtítulos irrelevantes
-            if "Digite o nome do título" in sub.get("title", ""):
-                continue
+        for d in secao.get("data", []):
+            heading_title = d.get("title")
+            subtitles = []
+            
+            for sub in secao.get("subtitles", []):
+                # Ignora subtítulos irrelevantes
+                if "Digite" in sub.get("title", ""):
+                    continue
 
-            # Aplica a função recursivamente para pegar títulos aninhados
-            subtitulo_limpo = clean(sub)
-            if subtitulo_limpo:  # Se não for None
-                subtitulos.append(subtitulo_limpo)
+                # Aplica a função recursivamente para pegar títulos aninhados
+                clean_subtitle = clean(sub)
+                if clean_subtitle:  # Se não for None
+                    subtitles.append(clean_subtitle)
+                    
+            data.append({
+                "title": heading_title,
+                "subtitles": subtitles,
+            })
+            subtitles = []
 
         # Retorna o dicionário apenas se o título for válido
-        if "Digite o nome do título" not in titulo_principal:
+        if "Digite" not in level_title:
             return {
-                "title": titulo_principal,
-                "subtitles": subtitulos,
-                "machine_name": _clean_string(titulo_principal)
+                "title": level_title,
+                "data": data
             }
+            
         return None
 
     # Aplica a função de limpeza para todas as seções de nível 1

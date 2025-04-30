@@ -1,0 +1,97 @@
+[
+    {
+        "title": "Elementos pré-textuais",
+        "data": [
+            {
+                "title": "RESUMO",
+                "subtitles": []
+            },
+            {
+                "title": "LISTA DE SIGLAS",
+                "subtitles": []
+            },
+            {
+                "title": "ÍNDICE DE ILUSTRAÇÕES",
+                "subtitles": []
+            }
+        ]
+    },
+    {
+        "title": "Elementos textuais",
+        "data": [
+            {
+                "title": "Introdução",
+                "subtitles": [
+                    {
+                        "title": "Objetivo",
+                        "subtitles": [
+                            {
+                                "title": "Objetivo Amplo",
+                                "subtitles": []
+                            },
+                            {
+                                "title": "Objetivo Específico",
+                                "subtitles": []
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Escopo",
+                        "subtitles": [
+                            {
+                                "title": "Escopo geral",
+                                "subtitles": []
+                            },
+                            {
+                                "title": "Escopo intrínseco",
+                                "subtitles": [
+                                    {
+                                        "title": "Jurisdição", "subtitles": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "title": "Metodologia",
+                "subtitles": [
+                    {
+                        "title": "Coleta de Dados",
+                        "subtitles": []
+                    },
+                    {
+                        "title": "Análise estatística",
+                        "subtitles": []
+                    }
+                ]
+            },
+            {
+                "title": "Resultados",
+                "subtitles": [
+                    {
+                        "title": "Resultados gerais",
+                        "subtitles": []
+                    },
+                    {
+                        "title": "Resultados específicos",
+                        "subtitles": []
+                    }
+                ]
+            },
+            {
+                "title": "Conclusão",
+                "subtitles": []
+            },
+            {
+                "title": "Proposta de encaminhamentos",
+                "subtitles": []
+            }
+                ]
+    },
+    {
+        "title": "Elementos pós-textuais",
+        "data": []
+    }
+]

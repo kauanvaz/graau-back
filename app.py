@@ -277,6 +277,7 @@ def generate_report():
     Espera receber um JSON com:
     - report_params: Parâmetros para gerar o relatório
     - cover_image_id: ID da imagem de capa previamente enviada
+    - nome_relatorio: Nome do relatório a ser gerado e mostrado no download
     """
     try:
         data = request.json

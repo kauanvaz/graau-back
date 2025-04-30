@@ -207,7 +207,11 @@ class ReportGenerator:
         try:
             doc = DocxTemplate(self.template_path)
 
-            self.generate_headings_from_structure(doc=doc.get_docx(), headings=context.get("seccoes", []))
+            # Extrai dados hierárquicos do contexto
+            _, textual_elements, _ = [elem.get("data", []) for elem in context.get("seccoes", [])]
+            
+            # Adiciona os dados hierárquicos (headings) ao contexto
+            self.generate_headings_from_structure(doc=doc.get_docx(), headings=textual_elements)
             
             if cover_image_path:
                 # Render the document and save it temporarily
@@ -231,7 +235,7 @@ class ReportGenerator:
             return True
 
         except Exception as e:
-            self.logger.error(f"Error generating report: {str(e)}")
+            self.logger.error(f"Error generating report: {type(e).__name__} - {e}")
             return False
 
 if __name__ == "__main__":

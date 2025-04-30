@@ -1,7 +1,7 @@
 import json
 from sharepoint import Sharepoint
 from report_generator import ReportGenerator
-from utils import format_data, get_status_processo
+from utils import get_status_processo, format_data , load_json
 
 def generate_json(data):
     # Salvar os dados em um arquivo JSON
@@ -18,87 +18,21 @@ if __name__ == "__main__":
     
     generate_json(sharepoint_data)
     
-    # Criar o gerador de relatórios
-    generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")
-    formatted_data = format_data(sharepoint_data[0])
-    formatted_data["seccoes"] = [
-        {
-            "title": "Introdução",
-            "subtitles": [
-                {
-                    "title": "Objetivo",
-                    "subtitles": [
-                        {
-                            "title": "Objetivo Amplo",
-                            "subtitles": []
-                        },
-                        {
-                            "title": "Objetivo Específico",
-                            "subtitles": []
-                        }
-                    ]
-                },
-                {
-                    "title": "Escopo",
-                    "subtitles": [
-                        {
-                            "title": "Escopo geral",
-                            "subtitles": []
-                        },
-                        {
-                            "title": "Escopo intrínseco",
-                            "subtitles": [
-                                {
-                                    "title": "Jurisdição", "subtitles": []
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "title": "Metodologia",
-            "subtitles": [
-                {
-                    "title": "Coleta de Dados",
-                    "subtitles": []
-                },
-                {
-                    "title": "Análise estatística",
-                    "subtitles": []
-                }
-            ]
-        },
-        {
-            "title": "Resultados",
-            "subtitles": [
-                {
-                    "title": "Resultados gerais",
-                    "subtitles": []
-                },
-                {
-                    "title": "Resultados específicos",
-                    "subtitles": []
-                }
-            ]
-        },
-        {
-            "title": "Conclusão",
-            "subtitles": []
-        },
-        {
-            "title": "Proposta de encaminhamentos",
-            "subtitles": []
-        }
-    ]
+    data = sharepoint_data[0]
+    data["seccoes"] = load_json("examples/sections.json")
     
     tipo_relatorio = "Recurso" # Vem do frontend
-    formatted_data["tipo_relatorio"] = tipo_relatorio
+    data["tipo_relatorio"] = tipo_relatorio
+    
+    formatted_data = format_data(data)
+    
     status_processo = get_status_processo(tipo_relatorio, formatted_data["processo_tipo"])
     
     if status_processo:
         formatted_data["status_processo"] = status_processo
+    
+    # Criar o gerador de relatórios
+    generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")
     
     # Gerar relatório
     success = generator.generate_report(
