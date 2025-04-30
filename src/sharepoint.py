@@ -12,6 +12,7 @@ except ImportError:
 
 class Sharepoint():
     def __init__(self) -> None:
+        load_dotenv()
         site_url_base = "https://tcepi365.sharepoint.com"
         site_url = "https://tcepi365.sharepoint.com/sites/SecretariadeControleExterno"
         username = os.getenv("USUARIO")
@@ -20,7 +21,6 @@ class Sharepoint():
         self.diretorias_mapping = load_json(Path('src/mappings/diretorias.json'))
         self.divisoes_mapping = load_json(Path('src/mappings/divisoes.json'))
         
-        load_dotenv()
 
     def get_all_lists(self):
         lists = self.site.GetListCollection()
