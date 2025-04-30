@@ -37,42 +37,21 @@ def load_json(path):
 #     # Junta com underline
 #     return '_'.join(palavras_filtradas)
 
-def _clean_secoes(secoes):
+def _clean_secoes(sections):
     def clean(secao):
-        level_title = secao.get("title")
-        data = []
-
-        for d in secao.get("data", []):
-            heading_title = d.get("title")
-            subtitles = []
-            
-            for sub in secao.get("subtitles", []):
-                # Ignora subtítulos irrelevantes
-                if "Digite" in sub.get("title", ""):
-                    continue
-
-                # Aplica a função recursivamente para pegar títulos aninhados
-                clean_subtitle = clean(sub)
-                if clean_subtitle:  # Se não for None
-                    subtitles.append(clean_subtitle)
-                    
-            data.append({
-                "title": heading_title,
-                "subtitles": subtitles,
-            })
-            subtitles = []
-
-        # Retorna o dicionário apenas se o título for válido
-        if "Digite" not in level_title:
-            return {
-                "title": level_title,
-                "data": data
-            }
-            
+        title = secao.get("title")
+        if "data" in secao:
+            data = [{
+                "title": d.get("title"),
+                "subtitles": [clean_sub for sub in d.get("subtitles", []) if (clean_sub := clean(sub))]
+            } for d in secao["data"]]
+            return {"title": title, "data": [d for d in data if d["subtitles"]]}
+        elif "subtitles" in secao:
+            subtitles = [clean_sub for sub in secao["subtitles"] if (clean_sub := clean(sub))]
+            return {"title": title, "subtitles": subtitles}
         return None
-
-    # Aplica a função de limpeza para todas as seções de nível 1
-    return [secao_limpa for secao in secoes if (secao_limpa := clean(secao))]
+    
+    return [clean_section for section in sections if (clean_section := clean(section))]
 
 def format_data(data: dict):
     """
