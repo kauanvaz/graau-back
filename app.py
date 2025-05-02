@@ -117,7 +117,7 @@ cleanup_thread = threading.Thread(target=cleanup_old_reports, daemon=True)
 cleanup_thread.start()
 
 
-def generate_report_task(data, filepath, task_id, cover_image_path):
+def generate_report_task(data, filepath, task_id, cover_image_path=None):
     """Função para gerar o relatório de forma assíncrona."""
     try:
         logger.info(f"Iniciando geração assíncrona do relatório: {task_id}")
@@ -160,7 +160,7 @@ def generate_report_task(data, filepath, task_id, cover_image_path):
         report_generator.generate_report(
             context=formatted_data,
             output_path=filepath,
-            cover_image_path=cover_image_path,
+            cover_image_path=cover_image_path
         )
         
         # Registrar o relatório no rastreador
@@ -285,7 +285,7 @@ def generate_report():
             return jsonify({"error": "Nenhum dado JSON recebido"}), 400
         
         # Validação de campos obrigatórios
-        required_fields = ['report_params', 'cover_image_id', 'nome_relatorio']
+        required_fields = ['report_params', 'nome_relatorio']
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             return jsonify({"error": f"Campo(s) obrigatório(s) ausente(s): {', '.join(missing_fields)}"}), 400
@@ -298,9 +298,6 @@ def generate_report():
                 if data['cover_image_id'] in filename:
                     cover_image_path = os.path.join(COVER_IMAGES_DIR, filename)
                     break
-            
-        if not cover_image_path or not os.path.exists(cover_image_path):
-            return jsonify({"error": "Imagem de capa não encontrada. Faça o upload novamente."}), 404
         
         # Gerar nome de arquivo único
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
