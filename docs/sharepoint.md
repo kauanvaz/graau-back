@@ -15,11 +15,12 @@ A classe principal para interação com o SharePoint.
 **Construtor:**
 
 ```python
-def __init__(self) -> None
+def __init__(self)
 ```
 
 - Inicializa a conexão com o SharePoint usando credenciais do arquivo `.env`
-- Carrega mapeamentos de diretorias a partir de um arquivo JSON
+- Carrega mapeamentos de diretorias a partir do arquivo `src/mappings/diretorias.json`
+- Carrega mapeamentos de divisões a partir do arquivo `src/mappings/divisoes.json`
 
 **Métodos:**
 
@@ -53,6 +54,7 @@ Método interno que transforma os dados brutos do SharePoint em um formato estru
 - Formata datas para o padrão brasileiro (DD/MM/AAAA)
 - Converte strings para inteiros
 - Formata nomes próprios seguindo regras de capitalização
+- Mapeia códigos de diretoria para seus nomes completos
 - Mapeia códigos de divisão para seus nomes completos
 - Formata valores monetários para o padrão brasileiro
 - Trata campos de múltiplos valores
@@ -90,14 +92,23 @@ Obtém dados de ações de controle do SharePoint, opcionalmente filtrados por I
 
 O método `_transform_data` utiliza várias funções auxiliares internas:
 
-- `safe_split`: Realiza split de valores separados por ";#"
-- `safe_date_format`: Formata datas
-- `safe_int`: Converte valores para inteiros
+- `safe_split`: Realiza split de valores separados por ";#" e retorna o segundo elemento
+- `safe_date_format`: Formata datas para o padrão brasileiro (DD/MM/AAAA)
+- `safe_int`: Converte valores para inteiros, tratando casos especiais
 - `safe_list_split`: Processa listas de valores com split
-- `safe_multiple_split`: Processa múltiplos valores com split
-- `safe_alternate_split`: Realiza split em elementos alternados
-- `format_name`: Formata nomes próprios com capitalização adequada
-- `mapear_divisao`: Mapeia códigos de divisão para nomes completos
+- `safe_multiple_split`: Processa múltiplos valores com split separados por ";#", removendo elementos vazios do início e do fim
+- `safe_alternate_split`: Realiza split e retorna elementos alternados (índices ímpares)
+- `format_name`: Formata nomes próprios com capitalização adequada, mantendo preposições e artigos em minúsculas
+
+## Transformação de Dados
+
+A transformação de dados inclui:
+
+- Extração de valores de diretoria e divisão a partir do campo 'Divisão de Origem Ajustada'
+- Mapeamento desses códigos para nomes completos utilizando os arquivos de mapeamento
+- Formatação de nomes próprios (relatores, procuradores)
+- Formatação de valores monetários (VRF) utilizando localização brasileira
+- Processamento de listas de valores em diversos formatos
 
 ## Dependências
 
@@ -105,7 +116,7 @@ O método `_transform_data` utiliza várias funções auxiliares internas:
 - `dotenv`: Para carregar variáveis de ambiente
 - `babel.numbers`: Para formatação de valores monetários
 - `pathlib`: Para manipulação de caminhos de arquivo
-- `re`: Para operações com expressões regulares
+- `utils`: Módulo interno contendo função `load_json` para carregar arquivos JSON
 
 ## Configuração
 
@@ -115,8 +126,9 @@ O módulo depende das seguintes configurações:
   - `USUARIO`: Nome de usuário para autenticação no SharePoint. Formato: user.name@tce.pi.gov.br
   - `SENHA`: Senha para autenticação no SharePoint
 
-- Arquivo de mapeamento:
+- Arquivos de mapeamento:
   - `src/mappings/diretorias.json`: Mapeamento de códigos de diretoria para nomes completos
+  - `src/mappings/divisoes.json`: Mapeamento de códigos de divisão para nomes completos
 
 ## Exemplo de Uso
 
@@ -136,5 +148,6 @@ print(acao_controle)
 ## Observações
 
 - O módulo realiza conexão automática com o site do SharePoint "https://tcepi365.sharepoint.com/sites/SecretariadeControleExterno"
-- As consultas são realizadas principalmente na lista "Cadastro de Ação de Controle"
+- As consultas são realizadas na lista "Cadastro de Ação de Controle"
 - O processo de transformação trata diversos casos especiais e formatos de dados
+- Os mapeamentos de diretorias e divisões permitem a exibição de nomes completos e formatados nos relatórios

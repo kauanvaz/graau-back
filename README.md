@@ -1,6 +1,6 @@
-# GRAAU - backend
+# GRAAU-backend
 
-API Flask para geração automatizada de relatórios em formato DOCX com suporte a imagens de capa.
+API para geração automatizada de relatórios em formato DOCX com suporte a imagens de capa.
 
 ## Características
 
@@ -26,13 +26,6 @@ pip install -r requirements.txt
 
 - Suporta apenas formato DOCX
 - Imagens de capa devem ter proporções compatíveis com o tamanho da página
-
-## Estrutura do arquivo .env
-
-```
-- USUARIO="user.name@tce.pi.gov.br"
-- SENHA="suaSenha"
-```
 
 ## Documentação
 

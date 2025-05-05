@@ -1,4 +1,4 @@
-# API de Geração de Relatórios - Documentação Atualizada
+# Documentação da API
 
 Esta API permite a geração assíncrona de relatórios DOCX a partir de dados do SharePoint, com gerenciamento de armazenamento de arquivos, processamento assíncrono e limpeza automática.
 
@@ -35,6 +35,12 @@ Esta API permite a geração assíncrona de relatórios DOCX a partir de dados d
 ou
 ```json
 {
+  "error": "Nenhum arquivo selecionado"
+}
+```
+ou
+```json
+{
   "error": "Formato de arquivo não permitido. Use: png, jpg, jpeg"
 }
 ```
@@ -57,9 +63,9 @@ ou
 **Resposta (202 Accepted):**
 ```json
 {
-  "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL1",
+  "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL2",
   "divisao_origem_ajustada_diretoria": "Diretoria de Fiscalização de Pessoal e Previdência",
-  "divisao_origem_ajustada_divisao": "1ª Divisão Técnica de Fiscalização",
+  "divisao_origem_ajustada_divisao": "Divisão de Fiscalização de Pessoal e Folha de Pagamento",
   "equipe_fiscalizacao": ["Fulaxo X", "Fulano Y"],
   "exercicios": ["2024", "2025"],
   "n_processo_eTCE": "TC/00000/2025",
@@ -72,7 +78,14 @@ ou
 }
 ```
 
-### 3. Gerar Relatório (Assíncrono)
+**Resposta (500 Internal Server Error):**
+```json
+{
+  "error": "Erro ao recuperar informações do Sharepoint: [detalhes do erro]"
+}
+```
+
+### 3. Gerar relatório (Assíncrono)
 
 **Endpoint:** `POST /api/generate-report`
 
@@ -82,9 +95,9 @@ ou
 ```json
 {
   "report_params": {
-    "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL1",
+    "divisao_origem_ajustada": "DFPESSOAL/DFPESSOAL2",
     "divisao_origem_ajustada_diretoria": "Diretoria de Fiscalização de Pessoal e Previdência",
-    "divisao_origem_ajustada_divisao": "1ª Divisão Técnica de Fiscalização",
+    "divisao_origem_ajustada_divisao": "Divisão de Fiscalização de Pessoal e Folha de Pagamento",
     "equipe_fiscalizacao": ["Fulaxo X", "Fulano Y"],
     "exercicios": ["2024", "2025"],
     "n_processo_eTCE": "TC/00000/2025",
@@ -94,16 +107,42 @@ ou
     "subclasse": "DENÚNCIA",
     "unidades_fiscalizadas": ["P. M. DE X", "P. M. DE Y"],
     "VRF": "R$ 00,00",
-    "front1": "...",
-    "front2": "...",
-    "front3": "..."
+    "seccoes": [
+      {
+        "title": "Elementos pré-textuais",
+        "data": [
+          {
+            "title": "Exemplo",
+            "subtitles": [...]
+          },
+          {
+            "title": "Exemplo",
+            "subtitles": [...]
+          }
+          {...}
+        ]
+      },
+      {
+        "title": "Elementos textuais",
+        "data": [...]
+      },
+      {
+        "title": "Elementos pós-textuais",
+        "data": [...]
+      }
+    ],
+    "tipo_relatorio": "Preliminar"
   },
-  "cover_image_id": "f7e9d2c1-b3a5-4e8f-9c6d-0b2a1e3f4d5c"
+  "cover_image_id": "f7e9d2c1-b3a5-4e8f-9c6d-0b2a1e3f4d5c",
+  "nome_relatorio": "Relatório Preliminar - Município X"
 }
 ```
 
 **Campos Obrigatórios:**
 - `report_params`: Parâmetros para personalização do relatório
+- `nome_relatorio`: Nome do relatório a ser gerado e mostrado no download
+
+**Campos Opcionais:**
 - `cover_image_id`: ID da imagem de capa previamente enviada
 
 **Resposta (202 Accepted):**
@@ -119,18 +158,18 @@ ou
 **Resposta (400 Bad Request):**
 ```json
 {
-  "error": "Campo(s) obrigatório(s) ausente(s): report_params, cover_image_id"
+  "error": "Campo(s) obrigatório(s) ausente(s): report_params, nome_relatorio"
 }
 ```
 
-**Resposta (404 Not Found):**
+**Resposta (500 Internal Server Error):**
 ```json
 {
-  "error": "Imagem de capa não encontrada. Faça o upload novamente."
+  "error": "Erro ao iniciar geração de relatório: [detalhes do erro]"
 }
 ```
 
-### 4. Verificar Status do Relatório
+### 4. Verificar status do relatório
 
 **Endpoint:** `GET /api/report-status/<task_id>`
 
@@ -157,7 +196,8 @@ ou
   "progress": 100,
   "created_at": "2023-02-15T12:31:15",
   "download_url": "/api/reports/f7e9d2c1-b3a5-4e8f-9c6d-0b2a1e3f4d5c",
-  "filename": "relatorio_20230215_123045_f7e9d2c1.docx"
+  "filename": "relatorio_20230215_123045_f7e9d2c1.docx",
+  "download_name": "Relatório Preliminar - Município X"
 }
 ```
 
@@ -165,7 +205,7 @@ ou
 ```json
 {
   "status": "error",
-  "message": "Erro ao gerar relatório: Falha ao conectar ao SharePoint",
+  "message": "Erro ao gerar relatório: [detalhes do erro]",
   "progress": 0,
   "created_at": "2023-02-15T12:30:45"
 }
@@ -178,6 +218,13 @@ ou
 }
 ```
 
+**Resposta (500 Internal Server Error):**
+```json
+{
+  "error": "Erro ao verificar status: [detalhes do erro]"
+}
+```
+
 ### 5. Download de Relatório
 
 **Endpoint:** `GET /api/reports/<report_id>`
@@ -185,9 +232,9 @@ ou
 **Descrição:** Faz o download de um relatório específico.
 
 **Parâmetros de URL:**
-- `report_id`: ID da tarefa (task_id) ou ID que aparece no nome do arquivo do relatório
+- `report_id`: ID da tarefa (task_id)
 
-**Resposta (200 OK):** Arquivo DOCX para download
+**Resposta (200 OK):** Arquivo DOCX para download com o nome personalizado definido em `nome_relatorio`
 
 **Resposta (404 Not Found):**
 ```json
@@ -202,7 +249,7 @@ ou
 }
 ```
 
-## Configurações do Sistema
+## Configurações do sistema
 
 A API possui as seguintes configurações:
 
@@ -214,17 +261,25 @@ A API possui as seguintes configurações:
 
 4. **MAX_IMAGE_SIZE**: Tamanho máximo permitido para arquivos de imagem de capa: 5MB.
 
-## Fluxo de Geração Assíncrona
+## Processamento dos dados
 
-1. Cliente faz upload da imagem de capa
+O sistema realiza as seguintes operações com os dados:
+
+1. **Formatação de dados**: Os dados recebidos em `report_params` são processados pela função `format_data()` para aplicar formatações adequadas para o relatório.
+
+2. **Status do Processo**: O sistema determina automaticamente o status do processo com base nos valores de `tipo_relatorio` e `processo_tipo` fornecidos usando a função `get_status_processo()`.
+
+## Fluxo de geração assíncrona
+
+1. Cliente faz upload da imagem de capa (opcional)
 2. Cliente consulta dados do SharePoint.
-3. Cliente envia solicitação para gerar relatório incluindo `report_params` e `cover_image_id`
+3. Cliente envia solicitação para gerar relatório incluindo `report_params`, `nome_relatorio` e opcionalmente `cover_image_id`
 4. API responde imediatamente com um `task_id`
 5. Cliente verifica o status da tarefa periodicamente
 6. Quando o relatório estiver pronto, o cliente recebe um link para download
 7. O relatório permanece disponível pelo período definido em REPORT_EXPIRATION_MINUTES
 
-## Exemplos de Uso
+## Exemplos de uso
 
 ### Upload de imagem de capa e geração de relatório
 
@@ -254,37 +309,62 @@ async function uploadCoverImage(fileInput) {
 // Consultar dados do SharePoint
 async function getSharePointData(sharePointId) {
   const response = await fetch(`/api/sharepoint_data/${sharePointId}`);
-  return await response.json();
+  const data = await response.json();
+  
+  if (response.ok) {
+    return data;
+  } else {
+    console.error("Erro ao recuperar dados do SharePoint:", data.error);
+    return null;
+  }
 }
 
 // Exemplo de geração de relatório
-async function generateReport(imageId) {
+async function generateReport(sharePointData, imageId = null) {
+  // Preparar os parâmetros do relatório
+  const reportParams = {
+    ...sharePointData,
+    seccoes: [
+      {
+        title: "Elementos pré-textuais",
+        data: [
+          { title: "SUMÁRIO", subtitles: [] },
+          { title: "LISTA DE FIGURAS", subtitles: [] }
+        ]
+      },
+      {
+        title: "Elementos textuais",
+        data: [
+          { title: "Introdução", subtitles: [] },
+          { title: "Objetivos", subtitles: [] }
+        ]
+      },
+      {
+        title: "Elementos pós-textuais",
+        data: []
+      }
+    ],
+    tipo_relatorio: "Preliminar"
+  };
+
+  // Preparar o corpo da requisição
+  const requestBody = {
+    report_params: reportParams,
+    nome_relatorio: `Relatório - ${reportParams.n_processo_eTCE}`,
+  };
+
+  // Adicionar imagem de capa se disponível
+  if (imageId) {
+    requestBody.cover_image_id = imageId;
+  }
+
   // Iniciar a geração do relatório
   const response = await fetch('/api/generate-report', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      report_params: {
-        divisao_origem_ajustada: "DFPESSOAL/DFPESSOAL1",
-        divisao_origem_ajustada_diretoria: "Diretoria de Fiscalização de Pessoal e Previdência",
-        divisao_origem_ajustada_divisao: "1ª Divisão Técnica de Fiscalização",
-        equipe_fiscalizacao: ["Fulaxo X", "Fulano Y"],
-        exercicios: ["2024", "2025"],
-        n_processo_eTCE: "TC/00000/2025",
-        processo_tipo: "...-...",
-        procurador: "Fulano",
-        relator: "Sicrano",
-        subclasse: "DENÚNCIA",
-        unidades_fiscalizadas: ["P. M. DE X", "P. M. DE Y"],
-        VRF: "R$ 00,00",
-        front1: "...",
-        front2: "...",
-        front3: "..."
-      },
-      cover_image_id: imageId
-    })
+    body: JSON.stringify(requestBody)
   });
 
   const data = await response.json();
@@ -302,6 +382,12 @@ async function checkReportStatus(taskId) {
   // Função para verificar o status
   const checkStatus = async () => {
     const response = await fetch(`/api/report-status/${taskId}`);
+    
+    if (!response.ok) {
+      console.error("Erro ao verificar status:", response.statusText);
+      return;
+    }
+    
     const data = await response.json();
     
     if (data.status === "completed") {
@@ -318,6 +404,7 @@ async function checkReportStatus(taskId) {
     
     // Atualizar progresso na interface
     updateProgressBar(data.progress);
+    console.log(`Status: ${data.message} (${data.progress}%)`);
     
     // Verificar novamente em 2 segundos
     setTimeout(checkStatus, 2000);
@@ -328,14 +415,23 @@ async function checkReportStatus(taskId) {
 }
 
 // Fluxo completo
-async function processReport() {
-  // 1. Upload da imagem
-  const fileInput = document.getElementById('coverImageInput');
-  const imageId = await uploadCoverImage(fileInput);
+async function processReport(sharePointId) {
+  // 1. Consultar dados do SharePoint
+  const sharePointData = await getSharePointData(sharePointId);
   
-  if (imageId) {
-    // 2. Gerar relatório
-    await generateReport(imageId);
+  if (!sharePointData) {
+    return;
   }
+  
+  // 2. Upload da imagem (opcional)
+  let imageId = null;
+  const fileInput = document.getElementById('coverImageInput');
+  
+  if (fileInput.files.length > 0) {
+    imageId = await uploadCoverImage(fileInput);
+  }
+  
+  // 3. Gerar relatório
+  await generateReport(sharePointData, imageId);
 }
 ```
