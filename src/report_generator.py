@@ -239,20 +239,22 @@ class ReportGenerator:
             return False
 
 if __name__ == "__main__":
-    sharepoint_data = [
-        {
-            "unidades_fiscalizadas": "P. M. CIDADE",
-            "n_processo_eTCE": "TC/XXXXXX/20XX",
-            "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
-            "exercicios": "20XX, 20YY",
-            "VRF": "R$ 100.000,00"
-        }
-    ]
+    from utils import load_json
+    
+    context = {
+    "unidades_fiscalizadas": "P. M. CIDADE",
+    "n_processo_eTCE": "TC/XXXXXX/20XX",
+    "n_processo_eTCE_processo_tipo": "CONTAS-TOMADA DE CONTAS ESPECIAL",
+    "exercicios": "20XX, 20YY",
+    "VRF": "R$ 100.000,00"
+    }
+    # Carregar dados de seções do arquivo JSON de exemplo
+    context["seccoes"] = load_json("examples/sections.json")
     
     generator = ReportGenerator("src/templates/Relatório Padrão - GRAAU.docx")
     
     success = generator.generate_report(
-        context=sharepoint_data[0],
+        context=context,
         output_path="src/reports/report_example.docx",
         cover_image_path="src/cover_images/cover_page_2.jpg",
     )
