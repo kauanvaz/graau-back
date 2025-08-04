@@ -45,7 +45,7 @@ def _clean_secoes(sections):
                 "title": d.get("title"),
                 "subtitles": [clean_sub for sub in d.get("subtitles", []) if (clean_sub := clean(sub))]
             } for d in secao["data"]]
-            return {"title": title, "data": [d for d in data if d["subtitles"]]}
+            return {"title": title, "data": [d for d in data]}
         elif "subtitles" in secao:
             subtitles = [clean_sub for sub in secao["subtitles"] if (clean_sub := clean(sub))]
             return {"title": title, "subtitles": subtitles}

@@ -137,7 +137,7 @@ class Sharepoint():
 
         return [
             {
-                'acao__controle_ativa': i.get('Ação de controle ativa?', ''),
+                'acao_controle_ativa': i.get('Ação de controle ativa?', ''),
                 'acoes_controle_PAI_objeto': i.get('Ações de controle PAI: Objeto ', ''),
                 'anexos': safe_int(i.get('Anexos', 0)),
                 'beneficios_efetivos': i.get('Benefícios efetivos:', ''),
